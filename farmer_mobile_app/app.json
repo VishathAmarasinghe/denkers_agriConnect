@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "AgriConnect",
+    "slug": "agriConnect_mobile_app",
+    "version": "1.3.1",
+    "orientation": "portrait",
+    "icon": "./assets/images/applogo.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "buildNumber": "30",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.agriConnect.agriConnectApp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "This app requires access to the photo library to upload photos such as incident images, profile photo, timesheet photoes etc.",
+        "NSDocumentsDirectoryUsageDescription": "This app needs access to your documents folder to allow users to upload and manage files such as pdf files",
+        "NSFileProviderUsageDescription": "This app needs access to files stored on the device to enable users to upload and manage documents such as pdf files etc."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/applogo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.agriConnect.agriConnectApp"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/mainlogo.png",
+          "imageWidth": 100,
+          "imageHeight": 100,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app requires access to the photo library to upload photos such as insident images, profile photo, timesheet photoes etc."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      "@config-plugins/react-native-blob-util",
+      "@config-plugins/react-native-pdf"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "1bd174c6-3fa3-48d0-8e63-75798f5b9cee"
+      }
+    }
+  }
+}

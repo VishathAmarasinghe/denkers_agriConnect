@@ -1,0 +1,31 @@
+{
+  "cli": {
+    "version": ">= 15.0.12",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "releaseChannel": "default",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "Info@skycaresolutions.com.au",
+        "ascAppId": "6742375251",
+        "appleTeamId": "8JPSJKHMV2"
+      }
+    }
+  }
+}
