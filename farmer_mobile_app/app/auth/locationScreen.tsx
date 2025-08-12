@@ -30,20 +30,14 @@ export default function LocationScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 px-6">
         {/* Top Section with Location Image */}
-        <View className="items-center pt-8 pb-6">
-          <Image 
-            source={images.locationImage} 
-            className="w-32 h-32 mb-6"
-            resizeMode="contain"
-          />
+        <View className="items-center pb-6 pt-8">
+          <Image source={images.locationImage} className="mb-6 h-32 w-32" resizeMode="contain" />
         </View>
 
         {/* Location Text Section */}
-        <View className="items-center mb-8">
-          <Text className="text-2xl font-bold text-center text-gray-800 mb-4">
-            Set your location
-          </Text>
-          <Text className="text-base text-center text-gray-600 leading-6 px-4">
+        <View className="mb-8 items-center">
+          <Text className="mb-4 text-center text-2xl font-bold text-gray-800">Set your location</Text>
+          <Text className="px-4 text-center text-base leading-6 text-gray-600">
             We will need your location to show local deals and faster delivery.
           </Text>
         </View>
@@ -77,17 +71,11 @@ export default function LocationScreen() {
             variant="primary"
             size="large"
             fullWidth={true}
-            className='my-4'
+            className="my-4"
             disabled={!selectedLocation}
           />
-          
-          <CustomButton
-            title="Not Now"
-            onPress={handleNotNow}
-            variant="outline"
-            size="large"
-            fullWidth={true}
-          />
+
+          <CustomButton title="Not Now" onPress={handleNotNow} variant="outline" size="large" fullWidth={true} />
         </View>
       </View>
     </SafeAreaView>

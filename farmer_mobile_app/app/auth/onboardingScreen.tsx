@@ -13,20 +13,20 @@ export default function OnboardingScreen() {
       icon: 'analytics',
       title: 'Smart Analytics',
       description: 'Get insights into your farm performance with AI-powered analytics and recommendations.',
-      color: '#52B788'
+      color: '#52B788',
     },
     {
       icon: 'monitor',
       title: 'Real-time Monitoring',
       description: 'Monitor your crops, soil, and equipment in real-time from anywhere in the world.',
-      color: '#52B788'
+      color: '#52B788',
     },
     {
       icon: 'support-agent',
       title: 'AI Farming Assistant',
       description: 'Get expert advice and answers to your farming questions 24/7.',
-      color: '#52B788'
-    }
+      color: '#52B788',
+    },
   ];
 
   const handleNext = () => {
@@ -49,53 +49,40 @@ export default function OnboardingScreen() {
     <SafeAreaView className="flex-1 bg-blue-50">
       <View className="flex-1 p-5">
         {/* Progress Bar */}
-        <View className="flex-row justify-center mb-8 mt-10">
+        <View className="mb-8 mt-10 flex-row justify-center">
           {steps.map((_, index) => (
             <View
               key={index}
-              className={`w-3 h-3 rounded-full mx-1 ${
-                index <= currentStep ? 'bg-green-600' : 'bg-gray-300'
-              }`}
+              className={`mx-1 h-3 w-3 rounded-full ${index <= currentStep ? 'bg-green-600' : 'bg-gray-300'}`}
             />
           ))}
         </View>
 
         {/* Step Content */}
-        <View className="flex-1 justify-center items-center">
-          <View className="items-center mb-8">
-            <MaterialIcons 
-              name={currentStepData.icon as any} 
-              size={100} 
-              color={currentStepData.color} 
-            />
+        <View className="flex-1 items-center justify-center">
+          <View className="mb-8 items-center">
+            <MaterialIcons name={currentStepData.icon as any} size={100} color={currentStepData.color} />
           </View>
-          
-          <Text className="text-3xl font-bold text-gray-800 text-center mb-4">
-            {currentStepData.title}
-          </Text>
-          
-          <Text className="text-base text-gray-600 text-center mb-8 leading-6 px-4">
-            {currentStepData.description}
-          </Text>
+
+          <Text className="mb-4 text-center text-3xl font-bold text-gray-800">{currentStepData.title}</Text>
+
+          <Text className="mb-8 px-4 text-center text-base leading-6 text-gray-600">{currentStepData.description}</Text>
         </View>
 
         {/* Navigation Buttons */}
-        <View className="flex-row justify-between items-center">
-          <Button 
-            mode="text" 
-            onPress={handleSkip}
-          >
+        <View className="flex-row items-center justify-between">
+          <Button mode="text" onPress={handleSkip}>
             Skip
           </Button>
-          
-          <Button 
-            mode="contained" 
+
+          <Button
+            mode="contained"
             onPress={handleNext}
             icon={() => (
-              <MaterialIcons 
-                name={currentStep === steps.length - 1 ? 'check' : 'arrow-forward'} 
-                size={24} 
-                color="white" 
+              <MaterialIcons
+                name={currentStep === steps.length - 1 ? 'check' : 'arrow-forward'}
+                size={24}
+                color="white"
               />
             )}
             style={{ backgroundColor: '#52B788' }}

@@ -14,20 +14,14 @@ export default function LanguageScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 justify-center items-center px-6">
+      <View className="flex-1 items-center justify-center px-6">
         {/* Translation Image */}
-        <View className="items-center mb-8">
-          <Image 
-            source={images.translationImage} 
-            className="w-32 h-32 mb-6"
-            resizeMode="contain"
-          />
+        <View className="mb-8 items-center">
+          <Image source={images.translationImage} className="mb-6 h-32 w-32" resizeMode="contain" />
         </View>
 
         {/* Language Selection Text */}
-        <Text className="text-2xl font-bold text-center text-gray-800 mb-12">
-          Select Your Preferred Language
-        </Text>
+        <Text className="mb-12 text-center text-2xl font-bold text-gray-800">Select Your Preferred Language</Text>
 
         {/* Language Buttons */}
         <View className="w-full max-w-sm space-y-4">
@@ -39,7 +33,7 @@ export default function LanguageScreen() {
             fullWidth={true}
             className="mb-4"
           />
-          
+
           <CustomButton
             title="Sinhala"
             onPress={() => handleLanguageSelect('Sinhala')}
@@ -48,7 +42,7 @@ export default function LanguageScreen() {
             fullWidth={true}
             className="mb-4"
           />
-          
+
           <CustomButton
             title="Tamil"
             onPress={() => handleLanguageSelect('Tamil')}

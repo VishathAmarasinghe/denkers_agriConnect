@@ -1,4 +1,3 @@
-
 import checkMark from '../assets/images/checkmark.png';
 import landingPageImage from '../assets/images/landingPageImage.jpg';
 import locationImage from '../assets/images/location.png';
@@ -16,4 +15,4 @@ export const images = {
 };
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-export const ALLOWED_FILE_TYPES = ["image/png", "image/jpg", "image/jpeg", "application/pdf"];
+export const ALLOWED_FILE_TYPES = ['image/png', 'image/jpg', 'image/jpeg', 'application/pdf'];

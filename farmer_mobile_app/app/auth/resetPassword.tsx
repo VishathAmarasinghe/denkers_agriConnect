@@ -19,13 +19,13 @@ export default function ResetPasswordScreen() {
   return (
     <SafeAreaView className="flex-1 bg-blue-50">
       <View className="flex-1 justify-center p-5">
-        <View className="items-center mb-5">
+        <View className="mb-5 items-center">
           <MaterialIcons name="lock-reset" size={80} color="#52B788" />
         </View>
-        
-        <Text className="text-3xl font-bold text-green-700 text-center mb-3">Reset Password</Text>
-        <Text className="text-base text-gray-600 text-center mb-8">Enter your details to reset your password</Text>
-        
+
+        <Text className="mb-3 text-center text-3xl font-bold text-green-700">Reset Password</Text>
+        <Text className="mb-8 text-center text-base text-gray-600">Enter your details to reset your password</Text>
+
         <TextInput
           label="Email Address"
           value={email}
@@ -35,7 +35,7 @@ export default function ResetPasswordScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        
+
         <TextInput
           label="Employee ID"
           value={employeeID}
@@ -44,27 +44,19 @@ export default function ResetPasswordScreen() {
           className="mb-5"
           autoCapitalize="none"
         />
-        
-        <View className="bg-green-50 p-4 rounded-lg mb-6">
-          <Text className="text-sm text-green-800 text-center leading-5">
-            We'll send a verification code to your email address. 
-            Make sure to enter the correct email associated with your account.
+
+        <View className="mb-6 rounded-lg bg-green-50 p-4">
+          <Text className="text-center text-sm leading-5 text-green-800">
+            We'll send a verification code to your email address. Make sure to enter the correct email associated with
+            your account.
           </Text>
         </View>
-        
-        <Button 
-          mode="contained" 
-          className="mb-5"
-          onPress={handleResetPassword}
-          style={{ backgroundColor: '#52B788' }}
-        >
+
+        <Button mode="contained" className="mb-5" onPress={handleResetPassword} style={{ backgroundColor: '#52B788' }}>
           Send Reset Code
         </Button>
-        
-        <Button 
-          mode="text" 
-          onPress={() => router.back()}
-        >
+
+        <Button mode="text" onPress={() => router.back()}>
           Back to Login
         </Button>
       </View>

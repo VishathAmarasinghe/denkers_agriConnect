@@ -1,1 +1,52 @@
+# System files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node.js
+farmer_mobile_app/node_modules/
+farmer_mobile_app/npm-debug.log*
+farmer_mobile_app/yarn-debug.log*
+farmer_mobile_app/yarn-error.log*
+
+# Expo
+farmer_mobile_app/.expo/
+farmer_mobile_app/.expo-shared/
+farmer_mobile_app/dist/
+farmer_mobile_app/expo-env.d.ts
+
+# Native builds
+farmer_mobile_app/android/
+farmer_mobile_app/ios/
+
+# Build outputs
+farmer_mobile_app/build/
+farmer_mobile_app/web-build/
+
+# Environment files
+farmer_mobile_app/.env
+farmer_mobile_app/.env.local
+farmer_mobile_app/.env.development.local
+farmer_mobile_app/.env.test.local
+farmer_mobile_app/.env.production.local
+
+# Logs
+farmer_mobile_app/*.log
+
+# Coverage directory used by tools like istanbul
+farmer_mobile_app/coverage/
+
+# IDE files
+farmer_mobile_app/.vscode/
+farmer_mobile_app/.idea/
+
+# Temporary files
+farmer_mobile_app/tmp/
+farmer_mobile_app/temp/
+
+# Other
+.cursor/

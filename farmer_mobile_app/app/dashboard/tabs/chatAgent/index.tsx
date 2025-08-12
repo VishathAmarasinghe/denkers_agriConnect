@@ -15,7 +15,7 @@ export default function ChatAgentScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI farming assistant. How can I help you today?',
+      text: "Hello! I'm your AI farming assistant. How can I help you today?",
       isUser: false,
       timestamp: new Date(),
     },
@@ -32,7 +32,7 @@ export default function ChatAgentScreen() {
       };
       setMessages([...messages, newMessage]);
       setInputText('');
-      
+
       // Simulate AI response
       setTimeout(() => {
         const aiResponse: Message = {
@@ -50,26 +50,24 @@ export default function ChatAgentScreen() {
     <SafeAreaView className="flex-1 bg-blue-50">
       <View className="flex-1">
         {/* Header */}
-        <View className="bg-blue-800 p-4 items-center">
+        <View className="items-center bg-blue-800 p-4">
           <MaterialIcons name="smart-toy" size={32} color="white" />
-          <Text className="text-xl font-bold text-white mt-2">AI Farming Assistant</Text>
-          <Text className="text-sm text-blue-200 mt-1">Powered by AgriConnect AI</Text>
+          <Text className="mt-2 text-xl font-bold text-white">AI Farming Assistant</Text>
+          <Text className="mt-1 text-sm text-blue-200">Powered by AgriConnect AI</Text>
         </View>
 
         {/* Chat Messages */}
         <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-          {messages.map((message) => (
-            <View
-              key={message.id}
-              className={`mb-4 ${message.isUser ? 'items-end' : 'items-start'}`}
-            >
+          {messages.map(message => (
+            <View key={message.id} className={`mb-4 ${message.isUser ? 'items-end' : 'items-start'}`}>
               <Card className={`max-w-80 ${message.isUser ? 'bg-blue-600' : 'bg-white'}`}>
                 <Card.Content className="p-3">
-                  <Text className={`text-sm ${message.isUser ? 'text-white' : 'text-gray-800'}`}>
-                    {message.text}
-                  </Text>
-                  <Text className={`text-xs mt-2 ${message.isUser ? 'text-blue-200' : 'text-gray-500'}`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <Text className={`text-sm ${message.isUser ? 'text-white' : 'text-gray-800'}`}>{message.text}</Text>
+                  <Text className={`mt-2 text-xs ${message.isUser ? 'text-blue-200' : 'text-gray-500'}`}>
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </Text>
                 </Card.Content>
               </Card>
@@ -80,48 +78,48 @@ export default function ChatAgentScreen() {
         {/* Quick Actions */}
         <Card className="mx-4 mb-4 shadow-md">
           <Card.Content>
-            <Title className="text-base text-blue-800 mb-3">Quick Questions</Title>
+            <Title className="mb-3 text-base text-blue-800">Quick Questions</Title>
             <View className="flex-row flex-wrap gap-2">
-              <TouchableOpacity 
-                className="bg-blue-100 px-3 py-2 rounded-full"
+              <TouchableOpacity
+                className="rounded-full bg-blue-100 px-3 py-2"
                 onPress={() => setInputText('How to improve soil fertility?')}
               >
-                <Text className="text-blue-800 text-xs">Soil Fertility</Text>
+                <Text className="text-xs text-blue-800">Soil Fertility</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                className="bg-blue-100 px-3 py-2 rounded-full"
+              <TouchableOpacity
+                className="rounded-full bg-blue-100 px-3 py-2"
                 onPress={() => setInputText('Best time to plant corn?')}
               >
-                <Text className="text-blue-800 text-xs">Planting Time</Text>
+                <Text className="text-xs text-blue-800">Planting Time</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                className="bg-blue-100 px-3 py-2 rounded-full"
+              <TouchableOpacity
+                className="rounded-full bg-blue-100 px-3 py-2"
                 onPress={() => setInputText('How to control pests naturally?')}
               >
-                <Text className="text-blue-800 text-xs">Pest Control</Text>
+                <Text className="text-xs text-blue-800">Pest Control</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                className="bg-blue-100 px-3 py-2 rounded-full"
+              <TouchableOpacity
+                className="rounded-full bg-blue-100 px-3 py-2"
                 onPress={() => setInputText('Irrigation schedule tips?')}
               >
-                <Text className="text-blue-800 text-xs">Irrigation</Text>
+                <Text className="text-xs text-blue-800">Irrigation</Text>
               </TouchableOpacity>
             </View>
           </Card.Content>
         </Card>
 
         {/* Input Area */}
-        <View className="bg-white p-4 border-t border-gray-200">
+        <View className="border-t border-gray-200 bg-white p-4">
           <View className="flex-row items-center space-x-2">
             <TextInput
-              className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-800"
+              className="flex-1 rounded-full bg-gray-100 px-4 py-3 text-gray-800"
               placeholder="Ask me anything about farming..."
               value={inputText}
               onChangeText={setInputText}
               multiline
             />
             <TouchableOpacity
-              className="bg-blue-600 w-12 h-12 rounded-full items-center justify-center"
+              className="h-12 w-12 items-center justify-center rounded-full bg-blue-600"
               onPress={sendMessage}
             >
               <MaterialIcons name="send" size={24} color="white" />
