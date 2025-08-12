@@ -1,13 +1,13 @@
 // components/Snackbar.tsx
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Snackbar as PaperSnackbar } from "react-native-paper";
-import { hideSnackbar } from "@/slice/snackbarSlice/snackbarSlice";
-import { useAppDispatch, useAppSelector } from "@/slice/store";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Snackbar as PaperSnackbar } from 'react-native-paper';
+import { hideSnackbar } from '@/slice/snackbarSlice/snackbarSlice';
+import { useAppDispatch, useAppSelector } from '@/slice/store';
 
 const Snackbar = () => {
   const dispatch = useAppDispatch();
-  const snackbarSlice = useAppSelector((state) => state.snack);
+  const snackbarSlice = useAppSelector(state => state.snack);
 
   return (
     <View style={styles.snackbarContainer} pointerEvents="box-none">
@@ -19,13 +19,13 @@ const Snackbar = () => {
         style={{
           borderRadius: 20,
           backgroundColor:
-            snackbarSlice.type === "success"
-              ? "#4CAF50"
-              : snackbarSlice?.type === "error"
-              ? "#FF0000"
-              : snackbarSlice?.type === "warning"
-              ? "#FFC107"
-              : "#2196F3",
+            snackbarSlice.type === 'success'
+              ? '#4CAF50'
+              : snackbarSlice?.type === 'error'
+                ? '#FF0000'
+                : snackbarSlice?.type === 'warning'
+                  ? '#FFC107'
+                  : '#2196F3',
         }}
       >
         {snackbarSlice.message}
@@ -36,13 +36,13 @@ const Snackbar = () => {
 
 const styles = StyleSheet.create({
   snackbarContainer: {
-    position: "absolute",
+    position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     zIndex: 999999999, // Very high z-index
     elevation: 99999, // For Android
-    pointerEvents: "box-none",
+    pointerEvents: 'box-none',
   },
 });
 

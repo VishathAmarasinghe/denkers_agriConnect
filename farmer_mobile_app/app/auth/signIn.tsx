@@ -29,11 +29,8 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView 
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
+        <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
@@ -41,15 +38,9 @@ export default function SignInScreen() {
         >
           <View className="px-6">
             {/* Top Section with Logo and Welcome */}
-            <View className="items-center pt-8 pb-8">
-              <Image 
-                source={images.appLogo} 
-                className="w-20 h-20 mb-4"
-                resizeMode="contain"
-              />
-              <Text className="text-2xl font-bold text-center text-gray-800">
-                Welcome Back
-              </Text>
+            <View className="items-center pb-8 pt-8">
+              <Image source={images.appLogo} className="mb-4 h-20 w-20" resizeMode="contain" />
+              <Text className="text-center text-2xl font-bold text-gray-800">Welcome Back</Text>
             </View>
 
             {/* Form Section */}
@@ -64,7 +55,7 @@ export default function SignInScreen() {
                   keyboardType="default"
                 />
               </View>
-              
+
               <View className="mb-6">
                 <TextInput
                   label="Password"
@@ -74,34 +65,28 @@ export default function SignInScreen() {
                   secureTextEntry
                 />
               </View>
-              
+
               <View className="mb-6">
-                <CustomButton
-                  title="Sign In"
-                  onPress={handleSignIn}
-                  variant="primary"
-                  size="large"
-                  fullWidth={true}
-                />
+                <CustomButton title="Sign In" onPress={handleSignIn} variant="primary" size="large" fullWidth={true} />
               </View>
 
               {/* Sign Up Link */}
-              <View className="flex-row justify-center items-center mb-8">
+              <View className="mb-8 flex-row items-center justify-center">
                 <Text className="text-gray-600">Don't have an account? </Text>
                 <CustomButton
                   title="Sign Up"
                   onPress={handleSignUp}
                   variant="ghost"
                   size="medium"
-                  className="p-0 m-0"
+                  className="m-0 p-0"
                 />
               </View>
 
               {/* Divider with OR */}
-              <View className="flex-row items-center mb-8">
-                <View className="flex-1 h-px bg-gray-300" />
-                <Text className="mx-4 text-gray-500 font-medium">OR</Text>
-                <View className="flex-1 h-px bg-gray-300" />
+              <View className="mb-8 flex-row items-center">
+                <View className="h-px flex-1 bg-gray-300" />
+                <Text className="mx-4 font-medium text-gray-500">OR</Text>
+                <View className="h-px flex-1 bg-gray-300" />
               </View>
 
               {/* Google Sign In Button */}
@@ -113,7 +98,7 @@ export default function SignInScreen() {
                   size="large"
                   fullWidth={true}
                   icon={
-                    <View className="w-5 h-5 mr-2">
+                    <View className="mr-2 h-5 w-5">
                       <MaterialIcons name="android" size={20} color="#4285F4" />
                     </View>
                   }
@@ -124,21 +109,21 @@ export default function SignInScreen() {
 
             {/* Bottom Terms and Privacy */}
             <View className="pb-6">
-              <View className="flex-row justify-center items-center">
+              <View className="flex-row items-center justify-center">
                 <CustomButton
                   title="Terms"
                   onPress={() => console.log('Terms pressed')}
                   variant="ghost"
                   size="small"
-                  className="p-0 m-0"
+                  className="m-0 p-0"
                 />
-                <Text className="text-gray-400 mx-2">|</Text>
+                <Text className="mx-2 text-gray-400">|</Text>
                 <CustomButton
                   title="Privacy Policy"
                   onPress={() => console.log('Privacy Policy pressed')}
                   variant="ghost"
                   size="small"
-                  className="p-0 m-0"
+                  className="m-0 p-0"
                 />
               </View>
             </View>

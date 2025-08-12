@@ -29,11 +29,8 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView 
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
+        <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
@@ -41,17 +38,12 @@ export default function SignupScreen() {
         >
           <View className="px-6">
             {/* Top Section with Logo and Welcome */}
-            <View className="items-center pt-8 pb-6">
-              <Image 
-                source={images.appLogo} 
-                className="w-20 h-20 mb-4"
-                resizeMode="contain"
-              />
-              <Text className="text-2xl font-bold text-center text-gray-800 mb-4">
-                Create your account
-              </Text>
-              <Text className="text-sm text-center text-gray-600 leading-5 px-4">
-                Please note that phone verification is required for signup. Your number will only be used to verify your identity for security purposes.
+            <View className="items-center pb-6 pt-8">
+              <Image source={images.appLogo} className="mb-4 h-20 w-20" resizeMode="contain" />
+              <Text className="mb-4 text-center text-2xl font-bold text-gray-800">Create your account</Text>
+              <Text className="px-4 text-center text-sm leading-5 text-gray-600">
+                Please note that phone verification is required for signup. Your number will only be used to verify your
+                identity for security purposes.
               </Text>
             </View>
 
@@ -67,7 +59,7 @@ export default function SignupScreen() {
                   keyboardType="default"
                 />
               </View>
-              
+
               <View className="mb-4">
                 <TextInput
                   label="NIC"
@@ -99,7 +91,7 @@ export default function SignupScreen() {
                   keyboardType="email-address"
                 />
               </View>
-              
+
               <View className="mb-4">
                 <TextInput
                   label="Password"
@@ -119,22 +111,16 @@ export default function SignupScreen() {
                   secureTextEntry
                 />
               </View>
-              
+
               <View className="mb-6">
-                <CustomButton
-                  title="Sign Up"
-                  onPress={handleSignup}
-                  variant="primary"
-                  size="large"
-                  fullWidth={true}
-                />
+                <CustomButton title="Sign Up" onPress={handleSignup} variant="primary" size="large" fullWidth={true} />
               </View>
 
               {/* Divider with OR */}
-              <View className="flex-row items-center mb-8">
-                <View className="flex-1 h-px bg-gray-300" />
-                <Text className="mx-4 text-gray-500 font-medium">OR</Text>
-                <View className="flex-1 h-px bg-gray-300" />
+              <View className="mb-8 flex-row items-center">
+                <View className="h-px flex-1 bg-gray-300" />
+                <Text className="mx-4 font-medium text-gray-500">OR</Text>
+                <View className="h-px flex-1 bg-gray-300" />
               </View>
 
               {/* Google Sign Up Button */}
@@ -146,7 +132,7 @@ export default function SignupScreen() {
                   size="large"
                   fullWidth={true}
                   icon={
-                    <View className="w-5 h-5 mr-2">
+                    <View className="mr-2 h-5 w-5">
                       <MaterialIcons name="android" size={20} color="#4285F4" />
                     </View>
                   }
@@ -157,21 +143,21 @@ export default function SignupScreen() {
 
             {/* Bottom Terms and Privacy */}
             <View className="pb-6">
-              <View className="flex-row justify-center items-center">
+              <View className="flex-row items-center justify-center">
                 <CustomButton
                   title="Terms"
                   onPress={() => console.log('Terms pressed')}
                   variant="ghost"
                   size="small"
-                  className="p-0 m-0"
+                  className="m-0 p-0"
                 />
-                <Text className="text-gray-400 mx-2">|</Text>
+                <Text className="mx-2 text-gray-400">|</Text>
                 <CustomButton
                   title="Privacy Policy"
                   onPress={() => console.log('Privacy Policy pressed')}
                   variant="ghost"
                   size="small"
-                  className="p-0 m-0"
+                  className="m-0 p-0"
                 />
               </View>
             </View>

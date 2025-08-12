@@ -1,4 +1,4 @@
-import { ImageSourcePropType } from "react-native";
+import { ImageSourcePropType } from 'react-native';
 
 export interface OnboardingType {
   description: string;
@@ -7,17 +7,17 @@ export interface OnboardingType {
 }
 
 export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
+  failed = 'failed',
+  success = 'success',
+  loading = 'loading',
+  idle = 'idle',
 }
 
 export interface UIShowingFile {
   name: string;
   docID: string;
-  status: "New" | "Old";
-  urlLink: string|null;
+  status: 'New' | 'Old';
+  urlLink: string | null;
 }
 
 export interface FileTypeUser {
@@ -27,7 +27,6 @@ export interface FileTypeUser {
   size: number;
 }
 
-
 export interface SettingsCardProps {
   title: SettingsCardTitle;
   icon: React.ElementType | React.ReactNode;
@@ -35,14 +34,14 @@ export interface SettingsCardProps {
 }
 
 export type SettingsCardTitle =
-  | "Languages"
-  | "Client Type"
-  | "Client Status"
-  | "Client Fundings"
-  | "Care Plan Status"
-  | "Appointment Types"
-  | "Incident Types"
-  | "Incident Status"
-  | "Incident Questions"
-  | "Care Giver File Uploads"
-  | "Care Giver Salary";
+  | 'Languages'
+  | 'Client Type'
+  | 'Client Status'
+  | 'Client Fundings'
+  | 'Care Plan Status'
+  | 'Appointment Types'
+  | 'Incident Types'
+  | 'Incident Status'
+  | 'Incident Questions'
+  | 'Care Giver File Uploads'
+  | 'Care Giver Salary';

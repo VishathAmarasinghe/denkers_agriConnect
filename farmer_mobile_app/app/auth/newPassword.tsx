@@ -19,13 +19,13 @@ export default function NewPasswordScreen() {
   return (
     <SafeAreaView className="flex-1 bg-blue-50">
       <View className="flex-1 justify-center p-5">
-        <View className="items-center mb-5">
+        <View className="mb-5 items-center">
           <MaterialIcons name="lock" size={80} color="#52B788" />
         </View>
-        
-        <Text className="text-3xl font-bold text-green-700 text-center mb-3">Set New Password</Text>
-        <Text className="text-base text-gray-600 text-center mb-8">Create a strong password for your account</Text>
-        
+
+        <Text className="mb-3 text-center text-3xl font-bold text-green-700">Set New Password</Text>
+        <Text className="mb-8 text-center text-base text-gray-600">Create a strong password for your account</Text>
+
         <TextInput
           label="New Password"
           value={newPassword}
@@ -34,7 +34,7 @@ export default function NewPasswordScreen() {
           className="mb-5"
           secureTextEntry
         />
-        
+
         <TextInput
           label="Confirm New Password"
           value={confirmPassword}
@@ -43,28 +43,20 @@ export default function NewPasswordScreen() {
           className="mb-5"
           secureTextEntry
         />
-        
-        <View className="bg-green-50 p-4 rounded-lg mb-6">
-          <Text className="text-sm font-medium text-green-800 mb-2">Password Requirements:</Text>
-          <Text className="text-xs text-green-700 mb-1">• At least 8 characters long</Text>
-          <Text className="text-xs text-green-700 mb-1">• Include uppercase and lowercase letters</Text>
-          <Text className="text-xs text-green-700 mb-1">• Include at least one number</Text>
-          <Text className="text-xs text-green-700 mb-1">• Include at least one special character</Text>
+
+        <View className="mb-6 rounded-lg bg-green-50 p-4">
+          <Text className="mb-2 text-sm font-medium text-green-800">Password Requirements:</Text>
+          <Text className="mb-1 text-xs text-green-700">• At least 8 characters long</Text>
+          <Text className="mb-1 text-xs text-green-700">• Include uppercase and lowercase letters</Text>
+          <Text className="mb-1 text-xs text-green-700">• Include at least one number</Text>
+          <Text className="mb-1 text-xs text-green-700">• Include at least one special character</Text>
         </View>
-        
-        <Button 
-          mode="contained" 
-          className="mb-5"
-          onPress={handlePasswordChange}
-          style={{ backgroundColor: '#52B788' }}
-        >
+
+        <Button mode="contained" className="mb-5" onPress={handlePasswordChange} style={{ backgroundColor: '#52B788' }}>
           Update Password
         </Button>
-        
-        <Button 
-          mode="text" 
-          onPress={() => router.back()}
-        >
+
+        <Button mode="text" onPress={() => router.back()}>
           Back
         </Button>
       </View>

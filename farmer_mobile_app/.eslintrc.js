@@ -1,8 +1,6 @@
 module.exports = {
   root: true,
-  extends: [
-    '@react-native',
-  ],
+  extends: ['@react-native'],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'react', 'react-hooks', 'react-native'],
   parserOptions: {
@@ -49,14 +47,5 @@ module.exports = {
     'prefer-const': 'error',
     'no-var': 'error',
   },
-  ignorePatterns: [
-    'node_modules/',
-    '.expo/',
-    'android/',
-    'ios/',
-    'dist/',
-    'build/',
-    '*.config.js',
-    '*.config.ts',
-  ],
+  ignorePatterns: ['node_modules/', '.expo/', 'android/', 'ios/', 'dist/', 'build/', '*.config.js', '*.config.ts'],
 };

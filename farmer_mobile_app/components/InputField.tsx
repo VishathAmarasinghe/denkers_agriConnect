@@ -24,11 +24,7 @@ const InputField: React.FC<InputFieldProps> = ({
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={[
-          styles.input,
-          multiline && styles.multilineInput,
-          error && styles.inputError
-        ]}
+        style={[styles.input, multiline && styles.multilineInput, error && styles.inputError]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

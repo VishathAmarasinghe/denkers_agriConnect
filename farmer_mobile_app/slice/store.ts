@@ -1,7 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./authSlice/Auth";
-import snackbarSlice from "./snackbarSlice/snackbarSlice";
-import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './authSlice/Auth';
+import snackbarSlice from './snackbarSlice/snackbarSlice';
+import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import otpSlice from './oTPSlice/oTP';
 
 export const store = configureStore({
@@ -10,7 +10,7 @@ export const store = configureStore({
     snack: snackbarSlice,
     otp: otpSlice,
   },
-  middleware: (getDefaultMiddleware) =>
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       thunk: undefined,
     }),

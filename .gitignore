@@ -17,6 +17,7 @@ farmer_mobile_app/yarn-error.log*
 farmer_mobile_app/.expo/
 farmer_mobile_app/.expo-shared/
 farmer_mobile_app/dist/
+farmer_mobile_app/expo-env.d.ts
 
 # Native builds
 farmer_mobile_app/android/

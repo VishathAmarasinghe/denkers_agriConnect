@@ -11,27 +11,18 @@ const LandingScreen = () => {
   };
 
   return (
-    <ImageBackground
-      source={images.landingPageImage}
-      style={{ width, height }}
-      className="flex-1"
-      resizeMode="cover"
-    >
+    <ImageBackground source={images.landingPageImage} style={{ width, height }} className="flex-1" resizeMode="cover">
       {/* Overlay for better text readability */}
       <View className="flex-1 bg-black/20" />
-      
+
       {/* Content */}
-      <View className="flex-1 justify-end pb-20 px-6">
+      <View className="flex-1 justify-end px-6 pb-20">
         {/* Transparent Card */}
-        <View className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 mx-4 shadow-2xl">
-          <Text className="text-4xl font-bold text-center text-gray-800 mb-4">
-            Welcome
-          </Text>
-          
-          <Text className="text-lg text-center text-gray-600 mb-8 leading-6">
-            Your agriculture service provider
-          </Text>
-          
+        <View className="mx-4 rounded-3xl bg-white/90 p-8 shadow-2xl backdrop-blur-sm">
+          <Text className="mb-4 text-center text-4xl font-bold text-gray-800">Welcome</Text>
+
+          <Text className="mb-8 text-center text-lg leading-6 text-gray-600">Your agriculture service provider</Text>
+
           {/* Custom Button */}
           <CustomButton
             title="Get Started"

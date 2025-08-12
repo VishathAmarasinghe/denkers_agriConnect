@@ -26,27 +26,27 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   className = '',
   textClassName = '',
   icon,
-  iconPosition = 'left'
+  iconPosition = 'left',
 }) => {
   const getButtonClasses = (): string => {
     const baseClasses = 'flex-row items-center justify-center rounded-lg';
     const sizeClasses = {
       small: 'px-3 py-2',
       medium: 'px-6 py-3',
-      large: 'px-8 py-4'
+      large: 'px-8 py-4',
     };
     const widthClasses = fullWidth ? 'w-full' : '';
-    
+
     const variantClasses = {
       primary: 'bg-[#52B788] active:bg-[#45A077]',
       secondary: 'bg-gray-200 active:bg-gray-300',
       outline: 'border-2 border-[#52B788] bg-transparent',
       ghost: 'bg-transparent',
-      danger: 'bg-red-500 active:bg-red-600'
+      danger: 'bg-red-500 active:bg-red-600',
     };
-    
+
     const disabledClasses = disabled || loading ? 'opacity-50' : '';
-    
+
     return `${baseClasses} ${sizeClasses[size]} ${widthClasses} ${variantClasses[variant]} ${disabledClasses} ${className}`.trim();
   };
 
@@ -55,19 +55,19 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     const sizeTextClasses = {
       small: 'text-sm',
       medium: 'text-base',
-      large: 'text-lg'
+      large: 'text-lg',
     };
-    
+
     const variantTextClasses = {
       primary: 'text-white',
       secondary: 'text-gray-800',
       outline: 'text-[#52B788]',
       ghost: 'text-[#52B788]',
-      danger: 'text-white'
+      danger: 'text-white',
     };
-    
+
     const disabledTextClasses = disabled || loading ? 'opacity-50' : '';
-    
+
     return `${baseTextClasses} ${sizeTextClasses[size]} ${variantTextClasses[variant]} ${disabledTextClasses} ${textClassName}`.trim();
   };
 
@@ -75,13 +75,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     if (loading) {
       return (
         <>
-          <ActivityIndicator 
-            size="small" 
-            color={variant === 'outline' || variant === 'ghost' ? '#52B788' : 'white'} 
-          />
-          <Text className={`${getTextClasses()} ml-2`}>
-            Loading...
-          </Text>
+          <ActivityIndicator size="small" color={variant === 'outline' || variant === 'ghost' ? '#52B788' : 'white'} />
+          <Text className={`${getTextClasses()} ml-2`}>Loading...</Text>
         </>
       );
     }
@@ -91,17 +86,13 @@ const CustomButton: React.FC<CustomButtonProps> = ({
         return (
           <>
             {icon}
-            <Text className={`${getTextClasses()} ml-2`}>
-              {title}
-            </Text>
+            <Text className={`${getTextClasses()} ml-2`}>{title}</Text>
           </>
         );
       } else {
         return (
           <>
-            <Text className={`${getTextClasses()} mr-2`}>
-              {title}
-            </Text>
+            <Text className={`${getTextClasses()} mr-2`}>{title}</Text>
             {icon}
           </>
         );

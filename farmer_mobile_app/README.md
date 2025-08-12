@@ -1,8 +1,8 @@
-# AgriConnect Mobile App 
+# AgriConnect Mobile App
 
 A comprehensive mobile application for smart farming and agriculture management, built with React Native and Expo.
 
-##  Features
+## Features
 
 - **User Authentication**: Secure login/signup with role-based access
 - **Dashboard**: Real-time farming insights and analytics
@@ -14,7 +14,7 @@ A comprehensive mobile application for smart farming and agriculture management,
 
 ## 📱 Screenshots
 
-*Screenshots will be added here*
+_Screenshots will be added here_
 
 ## 🛠️ Tech Stack
 
@@ -102,11 +102,13 @@ expo start
 ### Physical Device Testing
 
 #### iOS
+
 1. Install **Expo Go** from App Store
 2. Scan the QR code with your camera
 3. Open in Expo Go app
 
 #### Android
+
 1. Install **Expo Go** from Google Play Store
 2. Open Expo Go app
 3. Scan the QR code
@@ -114,6 +116,7 @@ expo start
 ### Emulator/Simulator Testing
 
 #### iOS Simulator (macOS only)
+
 ```bash
 npm run ios
 # or
@@ -121,6 +124,7 @@ yarn ios
 ```
 
 #### Android Emulator
+
 ```bash
 npm run android
 # or
@@ -150,6 +154,7 @@ Update `app.json` with your app details:
 ### 2. Build Commands
 
 #### Android APK
+
 ```bash
 expo build:android
 # or
@@ -157,6 +162,7 @@ eas build --platform android
 ```
 
 #### iOS IPA
+
 ```bash
 expo build:ios
 # or
@@ -198,9 +204,7 @@ The app uses **Tailwind CSS** through **NativeWind**:
 ```tsx
 // Example usage
 <View className="flex-1 bg-white p-4">
-  <Text className="text-2xl font-bold text-gray-800">
-    Welcome to AgriConnect
-  </Text>
+  <Text className="text-2xl font-bold text-gray-800">Welcome to AgriConnect</Text>
 </View>
 ```
 
@@ -227,6 +231,7 @@ npm test -- --coverage
 ### Common Issues
 
 #### Metro Bundler Issues
+
 ```bash
 # Clear Metro cache
 npx react-native start --reset-cache
@@ -235,6 +240,7 @@ expo start --clear
 ```
 
 #### Dependencies Issues
+
 ```bash
 # Clear npm cache
 npm cache clean --force
@@ -245,6 +251,7 @@ npm install
 ```
 
 #### iOS Build Issues
+
 ```bash
 # Clean Xcode build
 cd ios && xcodebuild clean
@@ -255,6 +262,7 @@ xcrun simctl erase all
 ```
 
 #### Android Build Issues
+
 ```bash
 # Clean Android build
 cd android && ./gradlew clean

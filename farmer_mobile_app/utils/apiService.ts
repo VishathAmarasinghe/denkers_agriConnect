@@ -1,6 +1,4 @@
-
-
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance } from 'axios';
 
 export class APIService {
   private static _instance: AxiosInstance;
@@ -18,7 +16,7 @@ export class APIService {
   // Get the shared axios instance
   public static getInstance(): AxiosInstance {
     if (!APIService._instance) {
-      throw new Error("APIService not initialized. Call initialize() first.");
+      throw new Error('APIService not initialized. Call initialize() first.');
     }
     return APIService._instance;
   }
