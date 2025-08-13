@@ -1,8 +1,9 @@
 import { APPLICATION_FARMER } from '@/config/config';
 import { useAppSelector } from '@/slice/store';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
+import TabBarBackground from '@/components/ui/TabBarBackground';
 
 export default function Layout() {
   const authSlice = useAppSelector(state => state?.auth);
@@ -15,43 +16,35 @@ export default function Layout() {
           headerShown: false,
           sceneStyle: { backgroundColor: 'transparent' },
           tabBarActiveTintColor: '#FFFFFF',
-          tabBarInactiveTintColor: '#D8F1E5',
+          tabBarInactiveTintColor: '#FFFFFF',
           tabBarStyle: {
             width: '100%',
             backgroundColor: 'transparent',
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
-            paddingBottom: 6,
+            paddingBottom: 10,
             overflow: 'visible',
-            height: 88,
+            height: 96,
             justifyContent: 'center',
             alignSelf: 'center',
             flexDirection: 'column',
             marginBottom: 0,
-            shadowColor: 'transparent',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 8,
             borderTopWidth: 0,
           },
-          tabBarBackground: () => (
-            <View
-              style={{
-                position: 'absolute',
-                left: '-5%',
-                width: '110%',
-                height: '100%',
-                backgroundColor: '#52B788',
-                borderTopLeftRadius: 28,
-                borderTopRightRadius: 28,
-              }}
-            />
-          ),
+          tabBarBackground: () => <TabBarBackground />,
           tabBarLabelStyle: {
             fontSize: 12,
-            fontWeight: '700',
+            fontWeight: '600',
             marginTop: 4,
+            color: '#FFFFFF',
           },
         })}
       >
-        {/* No explicit index route under tabs */}
         {/* HOME TAB */}
         {roles.includes(APPLICATION_FARMER) && (
           <Tabs.Screen
@@ -60,7 +53,11 @@ export default function Layout() {
               title: 'Home',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
+                <MaterialCommunityIcons 
+                  name={focused ? 'home' : 'home-outline'} 
+                  size={24} 
+                  color="#FFFFFF" 
+                />
               ),
             }}
           />
@@ -74,7 +71,11 @@ export default function Layout() {
               title: 'Soil Test',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <Ionicons name={focused ? 'leaf' : 'leaf-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
+                <MaterialCommunityIcons 
+                  name={focused ? 'flask' : 'flask-outline'} 
+                  size={24} 
+                  color="#FFFFFF" 
+                />
               ),
             }}
           />
@@ -88,7 +89,11 @@ export default function Layout() {
               title: 'Officers',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
+                <MaterialCommunityIcons 
+                  name={focused ? 'account-group' : 'account-group-outline'} 
+                  size={24} 
+                  color="#FFFFFF" 
+                />
               ),
             }}
           />
@@ -102,7 +107,11 @@ export default function Layout() {
               title: 'Machines',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <Ionicons name={focused ? 'construct' : 'construct-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
+                <MaterialCommunityIcons 
+                  name={focused ? 'tractor-variant' : 'tractor-variant'} 
+                  size={24} 
+                  color="#FFFFFF" 
+                />
               ),
             }}
           />
@@ -116,7 +125,11 @@ export default function Layout() {
               title: 'Harvest',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <Ionicons name={focused ? 'basket' : 'basket-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
+                <MaterialCommunityIcons 
+                  name={focused ? 'barn' : 'barn'} 
+                  size={24} 
+                  color="#FFFFFF" 
+                />
               ),
             }}
           />
