@@ -229,7 +229,7 @@ const FieldVisitScreen: React.FC = () => {
   // Animation values
   const fadeAnim = React.useRef(new Animated.Value(0)).current;   // landing intro
   const scaleAnim = React.useRef(new Animated.Value(0.9)).current; // landing intro
-  const width = React.useRef(require('react-native').Dimensions.get('window').width).current;
+  const width = React.useRef(Dimensions.get('window').width).current;
   const incomingTx = React.useRef(new Animated.Value(0)).current;
   const outgoingTx = React.useRef(new Animated.Value(0)).current;
   const incomingOpacity = React.useRef(new Animated.Value(1)).current;
@@ -642,5 +642,4 @@ const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => 
 };
 
 const inputStyle = { marginBottom: 12, borderRadius: 12, borderWidth: 1, borderColor: GREEN_LIGHT, backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: '#222' } as const;
-
 export default FieldVisitScreen;

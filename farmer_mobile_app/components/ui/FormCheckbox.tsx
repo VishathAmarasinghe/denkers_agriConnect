@@ -33,7 +33,7 @@ export const FormCheckbox: React.FC<FormCheckboxProps> = ({
     <View
       style={[
         styles.box,
-        { width: size, height: size, borderRadius: size * 0.27, borderColor: color },
+        { width: size, height: size, borderRadius: size * CHECKBOX_BORDER_RADIUS_RATIO, borderColor: color },
         checked && { backgroundColor: color + '22' },
       ]}
     >
