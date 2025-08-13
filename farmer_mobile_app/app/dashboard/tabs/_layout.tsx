@@ -116,7 +116,7 @@ export default function Layout() {
               title: 'Harvest',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
+                <Ionicons name={focused ? 'basket' : 'basket-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
               ),
             }}
           />
