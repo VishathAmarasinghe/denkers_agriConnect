@@ -4,6 +4,7 @@ import locationImage from '../assets/images/location.png';
 import appLogo from '../assets/images/mainlogo.png';
 import notificationImage from '../assets/images/notification.png';
 import translationImage from '../assets/images/translation.png';
+import officerVisitLandingImage from '../assets/images/landingofficerVisit.jpg';
 
 export const images = {
   appLogo,
@@ -12,6 +13,7 @@ export const images = {
   locationImage,
   translationImage,
   notificationImage,
+  officerVisitLandingImage,
 };
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
