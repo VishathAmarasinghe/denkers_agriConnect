@@ -641,5 +641,4 @@ const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => 
 };
 
 const inputStyle = { marginBottom: 12, borderRadius: 12, borderWidth: 1, borderColor: GREEN_LIGHT, backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: '#222' } as const;
-
 export default FieldVisitScreen;
