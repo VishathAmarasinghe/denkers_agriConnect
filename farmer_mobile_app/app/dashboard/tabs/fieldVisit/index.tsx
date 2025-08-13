@@ -225,170 +225,150 @@ const FieldVisitScreen: React.FC = () => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
 
-  const filteredExperts = useMemo(
-    () => EXPERTS.filter(e => e.category === category),
-    [category]
-  );
+  const filteredExperts = useMemo(() => EXPERTS.filter(e => e.category === category), [category]);
 
-  // Trigger animation when entering Landing screen
+  // Landing specific intro animation
   React.useEffect(() => {
     if (screen === Screen.Landing) {
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.9);
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
       ]).start();
     }
-  }, [screen, fadeAnim, scaleAnim]);
+  }, [screen]);
 
-  // Screen Renderers
-  if (screen === Screen.Landing) {
-    return (
-      <View style={styles.landingRoot}>
-        <ImageBackground
-          source={images.officerVisitLandingImage}
-          style={styles.bgImage}
-          imageStyle={styles.bgImageInner}
-        >
-          <View style={styles.bgOverlay} />
-          <Animated.View style={[styles.landingCardOverlay, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.appTitle}>Connect with</Text>
-            <Text style={styles.appTitle}>Agricultural Experts</Text>
-            <Text style={styles.appSubtitle}>
-              Get personalized agricultural advice from certified field officers. Choose from general farm support, pest control consultation, or fertilizer guidance - all delivered at your convenience.
-            </Text>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => setScreen(Screen.ExpertsTabbed)}
-              accessibilityRole="button"
-              accessibilityLabel="Connect with experts"
-            >
-              <Text style={styles.primaryBtnText}>Connect Experts</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </ImageBackground>
-      </View>
-    );
-  }
+  // Generic transition for every screen change
+  const transOpacity = React.useRef(new Animated.Value(1)).current;
+  const transTranslate = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    transOpacity.setValue(0);
+    transTranslate.setValue(12);
+    Animated.parallel([
+      Animated.timing(transOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.timing(transTranslate, { toValue: 0, duration: 260, useNativeDriver: true }),
+    ]).start();
+  }, [screen]);
 
-  if (screen === Screen.ExpertsTabbed) {
-    return (
-      <View style={styles.flex}>
-        <Header title="Experts" onBack={() => setScreen(Screen.Landing)} />
-        <View style={styles.tabRow}>
-          {CATEGORIES.map(cat => {
-            const isLong = cat.length > 15; // Fertilizer Guidance
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.tab, category === cat && styles.tabActive]}
-                onPress={() => setCategory(cat)}
-                accessibilityRole="button"
-                accessibilityLabel={`Filter experts by ${cat}`}
-              >
-                <Text
-                  numberOfLines={2} // allow up to two lines
-                  style={[
-                    styles.tabText,
-                    isLong && styles.tabTextLong,
-                    category === cat && styles.tabTextActive,
-                  ]}
-                >
-                  {cat}
-                </Text>
+  let content: React.ReactNode = null;
+  switch (screen) {
+    case Screen.Landing:
+      content = (
+        <View style={styles.landingRoot}>
+          <ImageBackground source={images.officerVisitLandingImage} style={styles.bgImage} imageStyle={styles.bgImageInner}>
+            <View style={styles.bgOverlay} />
+            <Animated.View style={[styles.landingCardOverlay, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+              <Text style={styles.appTitle}>Connect with</Text>
+              <Text style={styles.appTitle}>Agricultural Experts</Text>
+              <Text style={styles.appSubtitle}>Get personalized agricultural advice from certified field officers. Choose from general farm support, pest control consultation, or fertilizer guidance - all delivered at your convenience.</Text>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => setScreen(Screen.ExpertsTabbed)} accessibilityRole="button" accessibilityLabel="Connect with experts">
+                <Text style={styles.primaryBtnText}>Connect Experts</Text>
               </TouchableOpacity>
-            );
-          })}
+            </Animated.View>
+          </ImageBackground>
         </View>
-        <FlatList
-          data={filteredExperts}
-          keyExtractor={it => it.id}
-          contentContainerStyle={styles.listPad}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.expertCard}
-              onPress={() => { setSelected(item); setScreen(Screen.Profile); }}
-              accessibilityRole="button"
-              accessibilityLabel={`View profile of ${item.name}`}
-            >
-              <Image source={item.avatarUrl ? { uri: item.avatarUrl } : (item.photo || images.appLogo)} style={styles.expertAvatar} />
-              <View style={styles.expertBody}>
-                <Text style={styles.expertName}>{item.name}</Text>
-                <Text style={styles.expertRole}>{item.role}</Text>
-                <View style={styles.inlineRow}> 
-                  <View style={styles.phoneRow}>
-                    <Text style={styles.iconText}>📞</Text>
-                    <Text style={styles.metaText}>{item.phone}</Text>
-                  </View>
-                  <StarRating value={item.rating} />
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-    );
-  }
-
-  if (screen === Screen.Profile && selected) {
-    return (
-      <View style={styles.flex}>
-        <Header title="Experts Profile" onBack={() => { setSelected(null); setScreen(Screen.ExpertsTabbed); }} />
-        <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.profileCard}>
-            <Image source={selected.avatarUrl ? { uri: selected.avatarUrl } : (selected.photo || images.appLogo)} style={styles.profilePhoto} />
-            <Text style={styles.profileName}>{selected.name}</Text>
-            <Text style={styles.profileRole}>{selected.role}</Text>
-            <Text style={styles.profileDesc}>{selected.description}</Text>
-            <View style={styles.metaRow}><Text style={styles.iconText}>📞</Text><Text style={styles.metaText}>{selected.phone}</Text></View>
-            <View style={styles.metaRow}><Text style={styles.iconText}>⏰</Text><Text style={styles.metaText}>{selected.hours}</Text></View>
-            <View style={styles.metaRow}><Text style={styles.iconText}>📍</Text><Text style={styles.metaText}>{selected.officeLocation}</Text></View>
-            <View style={styles.infoStrip}>
-              <Text style={styles.infoStripTitle}>Request Farm Visit</Text>
-              <Text style={styles.infoStripText}>Get on-site assessment and personalized guidance to improve yield and reduce risks.</Text>
-            </View>
-            <Button label="Contact Me" onPress={() => setScreen(Screen.ContactForm)} />
+      );
+      break;
+    case Screen.ExpertsTabbed:
+      content = (
+        <View style={styles.flex}>
+          <Header title="Experts" onBack={() => setScreen(Screen.Landing)} />
+          <View style={styles.tabRow}>
+            {CATEGORIES.map(cat => {
+              const isLong = cat.length > 15;
+              return (
+                <TouchableOpacity key={cat} style={[styles.tab, category === cat && styles.tabActive]} onPress={() => setCategory(cat)} accessibilityRole="button" accessibilityLabel={`Filter experts by ${cat}`}>
+                  <Text numberOfLines={2} style={[styles.tabText, isLong && styles.tabTextLong, category === cat && styles.tabTextActive]}>{cat}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  if (screen === Screen.ContactForm) {
-    return (
-      <View style={styles.flex}>
-        <Header title="Contact" onBack={() => setScreen(Screen.Profile)} />
-        <ContactFormInline onSubmit={() => setScreen(Screen.Confirmation)} />
-      </View>
-    );
-  }
-
-  if (screen === Screen.Confirmation) {
-    return (
-      <View style={styles.flex}>
-        <Header title="" onBack={() => { setSelected(null); setScreen(Screen.Landing); }} />
-        <View style={styles.confirmCard}>
-          <View style={styles.checkCircle}><Text style={styles.checkMark}>✓</Text></View>
-          <Text style={styles.confirmTitle}>Request Submitted Successfully!</Text>
-          <Text style={styles.confirmMsg}>Your field visit request has been successfully submitted! Our agricultural officer will review your concerns and contact you within 24 hours to discuss available time slots and schedule the farm visit.</Text>
-          <Button label="Finish" onPress={() => { setSelected(null); setScreen(Screen.Landing); }} />
+          <FlatList
+            data={filteredExperts}
+            keyExtractor={it => it.id}
+            contentContainerStyle={styles.listPad}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.expertCard}
+                onPress={() => { setSelected(item); setScreen(Screen.Profile); }}
+                accessibilityRole="button"
+                accessibilityLabel={`View profile of ${item.name}`}
+              >
+                <Image source={item.avatarUrl ? { uri: item.avatarUrl } : (item.photo || images.appLogo)} style={styles.expertAvatar} />
+                <View style={styles.expertBody}>
+                  <Text style={styles.expertName}>{item.name}</Text>
+                  <Text style={styles.expertRole}>{item.role}</Text>
+                  <View style={styles.inlineRow}>
+                    <View style={styles.phoneRow}>
+                      <Text style={styles.iconText}>📞</Text>
+                      <Text style={styles.metaText}>{item.phone}</Text>
+                    </View>
+                    <StarRating value={item.rating} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
         </View>
-      </View>
-    );
+      );
+      break;
+    case Screen.Profile:
+      if (selected) {
+        content = (
+          <View style={styles.flex}>
+            <Header title="Experts Profile" onBack={() => { setSelected(null); setScreen(Screen.ExpertsTabbed); }} />
+            <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.profileCard}>
+                <Image source={selected.avatarUrl ? { uri: selected.avatarUrl } : (selected.photo || images.appLogo)} style={styles.profilePhoto} />
+                <Text style={styles.profileName}>{selected.name}</Text>
+                <Text style={styles.profileRole}>{selected.role}</Text>
+                <Text style={styles.profileDesc}>{selected.description}</Text>
+                <View style={styles.metaRow}><Text style={styles.iconText}>📞</Text><Text style={styles.metaText}>{selected.phone}</Text></View>
+                <View style={styles.metaRow}><Text style={styles.iconText}>⏰</Text><Text style={styles.metaText}>{selected.hours}</Text></View>
+                <View style={styles.metaRow}><Text style={styles.iconText}>📍</Text><Text style={styles.metaText}>{selected.officeLocation}</Text></View>
+                <View style={styles.infoStrip}>
+                  <Text style={styles.infoStripTitle}>Request Farm Visit</Text>
+                  <Text style={styles.infoStripText}>Get on-site assessment and personalized guidance to improve yield and reduce risks.</Text>
+                </View>
+                <Button label="Contact Me" onPress={() => setScreen(Screen.ContactForm)} />
+              </View>
+            </ScrollView>
+          </View>
+        );
+      }
+      break;
+    case Screen.ContactForm:
+      content = (
+        <View style={styles.flex}>
+          <Header title="Contact" onBack={() => setScreen(Screen.Profile)} />
+          <ContactFormInline onSubmit={() => setScreen(Screen.Confirmation)} />
+        </View>
+      );
+      break;
+    case Screen.Confirmation:
+      content = (
+        <View style={styles.flex}>
+          <Header title="" onBack={() => { setSelected(null); setScreen(Screen.Landing); }} />
+          <View style={styles.confirmCard}>
+            <View style={styles.checkCircle}><Text style={styles.checkMark}>✓</Text></View>
+            <Text style={styles.confirmTitle}>Request Submitted Successfully!</Text>
+            <Text style={styles.confirmMsg}>Your field visit request has been successfully submitted! Our agricultural officer will review your concerns and contact you within 24 hours to discuss available time slots and schedule the farm visit.</Text>
+            <Button label="Finish" onPress={() => { setSelected(null); setScreen(Screen.Landing); }} />
+          </View>
+        </View>
+      );
+      break;
   }
 
-  return null;
+  return (
+    <View style={styles.screenRoot}>
+      <Animated.View style={[styles.transitionWrap, { opacity: transOpacity, transform: [{ translateY: transTranslate }] }]}>
+        {content}
+      </Animated.View>
+    </View>
+  );
 };
 
 // Styles
@@ -469,6 +449,8 @@ const styles = StyleSheet.create({
   tabTextLong: { fontSize: 12, lineHeight: 15 },
   tabTextActive: { color: '#fff' },
   listPad: { paddingBottom: 32, paddingHorizontal: 4 },
+  screenRoot: { flex: 1, backgroundColor: '#fff' },
+  transitionWrap: { flex: 1 },
   // Expert card inline styles
   expertCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, alignItems: 'center' },
   expertAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E0E0E0' },
