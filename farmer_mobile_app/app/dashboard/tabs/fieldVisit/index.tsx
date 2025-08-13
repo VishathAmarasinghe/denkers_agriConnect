@@ -229,7 +229,7 @@ const FieldVisitScreen: React.FC = () => {
   // Animation values
   const fadeAnim = React.useRef(new Animated.Value(0)).current;   // landing intro
   const scaleAnim = React.useRef(new Animated.Value(0.9)).current; // landing intro
-  const width = React.useRef(require('react-native').Dimensions.get('window').width).current;
+  const width = React.useRef(Dimensions.get('window').width).current;
   const incomingTx = React.useRef(new Animated.Value(0)).current;
   const outgoingTx = React.useRef(new Animated.Value(0)).current;
   const incomingOpacity = React.useRef(new Animated.Value(1)).current;
