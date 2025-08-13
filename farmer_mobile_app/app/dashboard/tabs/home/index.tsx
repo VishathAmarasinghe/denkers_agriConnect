@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 export default function HomeScreen() {
   const router = useRouter();
   const { height: screenHeight } = Dimensions.get('window');
-  const contentBottomPadding = 120; // ensure visible above tab bar
+  const contentBottomPadding = 140; // ensure visible above custom tab bar (100px + extra space)
 
   return (
     <SafeAreaView className="flex-1 bg-transparent">

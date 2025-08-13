@@ -6,138 +6,169 @@ import { View } from 'react-native';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 
 export default function Layout() {
-  const authSlice = useAppSelector(state => state?.auth);
-  const roles = authSlice?.roles || [];
+	const authSlice = useAppSelector(state => state?.auth);
+	const roles = authSlice?.roles || [];
 
-  return (
-    <View className="flex-1 bg-transparent">
-      <Tabs
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          sceneStyle: { backgroundColor: 'transparent' },
-          tabBarActiveTintColor: '#FFFFFF',
-          tabBarInactiveTintColor: '#FFFFFF',
-          tabBarStyle: {
-            width: '100%',
-            backgroundColor: 'transparent',
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            paddingBottom: 10,
-            overflow: 'visible',
-            height: 96,
-            justifyContent: 'center',
-            alignSelf: 'center',
-            flexDirection: 'column',
-            marginBottom: 0,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 8,
-            borderTopWidth: 0,
-          },
-          tabBarBackground: () => <TabBarBackground />,
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '600',
-            marginTop: 4,
-            color: '#FFFFFF',
-          },
-        })}
-      >
-        {/* HOME TAB */}
-        {roles.includes(APPLICATION_FARMER) && (
-          <Tabs.Screen
-            name="home"
-            options={{
-              title: 'Home',
-              headerShown: false,
-              tabBarIcon: ({ focused }) => (
-                <MaterialCommunityIcons 
-                  name={focused ? 'home' : 'home-outline'} 
-                  size={24} 
-                  color="#FFFFFF" 
-                />
-              ),
-            }}
-          />
-        )}
+	return (
+		<View className="flex-1 bg-transparent">
+			<Tabs
+				screenOptions={() => ({
+					headerShown: false,
+					sceneStyle: { backgroundColor: 'transparent' },
+					tabBarActiveTintColor: '#FFFFFF',
+					tabBarInactiveTintColor: 'rgba(255,255,255,0.7)',
+					tabBarStyle: {
+						width: '100%',
+						backgroundColor: 'transparent',
+						borderTopLeftRadius: 32,
+						borderTopRightRadius: 32,
+						paddingBottom: 16,
+						paddingTop: 12,
+						overflow: 'visible',
+						height: 100,
+						justifyContent: 'space-between',
+						alignSelf: 'center',
+						flexDirection: 'row',
+						marginBottom: 0,
+						shadowColor: '#000',
+						shadowOffset: { width: 0, height: -8 },
+						shadowOpacity: 0.15,
+						shadowRadius: 16,
+						elevation: 12,
+						borderTopWidth: 0,
+						paddingHorizontal: 20,
+					},
+					tabBarBackground: () => <TabBarBackground />,
+					tabBarLabelStyle: {
+						fontSize: 11,
+						fontWeight: '600',
+						marginTop: 6,
+						color: 'inherit',
+						letterSpacing: 0.5,
+					},
+					tabBarIconStyle: { marginBottom: 2 },
+				})}
+			>
+				{/* HOME TAB - always available to avoid empty Tabs */}
+				<Tabs.Screen
+					name="home"
+					options={{
+						title: 'Home',
+						headerShown: false,
+						tabBarIcon: ({ focused, color }) => (
+							<View style={{
+								backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
+								borderRadius: 12,
+								padding: 8,
+								width: 40,
+								height: 40,
+								alignItems: 'center',
+								justifyContent: 'center',
+							}}>
+								<MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+							</View>
+						),
+					}}
+				/>
 
-        {/* SOIL TEST TAB */}
-        {roles.includes(APPLICATION_FARMER) && (
-          <Tabs.Screen
-            name="soilManagement"
-            options={{
-              title: 'Soil Test',
-              headerShown: false,
-              tabBarIcon: ({ focused }) => (
-                <MaterialCommunityIcons 
-                  name={focused ? 'flask' : 'flask-outline'} 
-                  size={24} 
-                  color="#FFFFFF" 
-                />
-              ),
-            }}
-          />
-        )}
+				{/* SOIL TEST TAB */}
+				{roles.includes(APPLICATION_FARMER) && (
+					<Tabs.Screen
+						name="soilManagement"
+						options={{
+							title: 'Soil Test',
+							headerShown: false,
+							tabBarIcon: ({ focused, color }) => (
+								<View style={{
+									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
+									borderRadius: 12,
+									padding: 8,
+									width: 40,
+									height: 40,
+									alignItems: 'center',
+									justifyContent: 'center',
+								}}>
+									<MaterialCommunityIcons name={focused ? 'flask' : 'flask-outline'} size={22} color={color} />
+								</View>
+							),
+						}}
+					/>
+				)}
 
-        {/* OFFICERS TAB */}
-        {roles.includes(APPLICATION_FARMER) && (
-          <Tabs.Screen
-            name="fieldVisit"
-            options={{
-              title: 'Officers',
-              headerShown: false,
-              tabBarIcon: ({ focused }) => (
-                <MaterialCommunityIcons 
-                  name={focused ? 'account-group' : 'account-group-outline'} 
-                  size={24} 
-                  color="#FFFFFF" 
-                />
-              ),
-            }}
-          />
-        )}
+				{/* OFFICERS TAB */}
+				{roles.includes(APPLICATION_FARMER) && (
+					<Tabs.Screen
+						name="fieldVisit"
+						options={{
+							title: 'Officers',
+							headerShown: false,
+							tabBarIcon: ({ focused, color }) => (
+								<View style={{
+									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
+									borderRadius: 12,
+									padding: 8,
+									width: 40,
+									height: 40,
+									alignItems: 'center',
+									justifyContent: 'center',
+								}}>
+									<MaterialCommunityIcons name={focused ? 'account-group' : 'account-group-outline'} size={22} color={color} />
+								</View>
+							),
+						}}
+					/>
+				)}
 
-        {/* MACHINES TAB */}
-        {roles.includes(APPLICATION_FARMER) && (
-          <Tabs.Screen
-            name="machineRent"
-            options={{
-              title: 'Machines',
-              headerShown: false,
-              tabBarIcon: ({ focused }) => (
-                <MaterialCommunityIcons 
-                  name={focused ? 'tractor-variant' : 'tractor-variant'} 
-                  size={24} 
-                  color="#FFFFFF" 
-                />
-              ),
-            }}
-          />
-        )}
+				{/* MACHINES TAB */}
+				{roles.includes(APPLICATION_FARMER) && (
+					<Tabs.Screen
+						name="machineRent"
+						options={{
+							title: 'Machines',
+							headerShown: false,
+							tabBarIcon: ({ focused, color }) => (
+								<View style={{
+									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
+									borderRadius: 12,
+									padding: 8,
+									width: 40,
+									height: 40,
+									alignItems: 'center',
+									justifyContent: 'center',
+								}}>
+									<MaterialCommunityIcons name={focused ? 'tractor-variant' : 'tractor-variant'} size={22} color={color} />
+								</View>
+							),
+						}}
+					/>
+				)}
 
-        {/* HARVEST TAB */}
-        {roles.includes(APPLICATION_FARMER) && (
-          <Tabs.Screen
-            name="harvestHub"
-            options={{
-              title: 'Harvest',
-              headerShown: false,
-              tabBarIcon: ({ focused }) => (
-                <MaterialCommunityIcons 
-                  name={focused ? 'barn' : 'barn'} 
-                  size={24} 
-                  color="#FFFFFF" 
-                />
-              ),
-            }}
-          />
-        )}
+				{/* HARVEST TAB */}
+				{roles.includes(APPLICATION_FARMER) && (
+					<Tabs.Screen
+						name="harvestHub"
+						options={{
+							title: 'Harvest',
+							headerShown: false,
+							tabBarIcon: ({ focused, color }) => (
+								<View style={{
+									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
+									borderRadius: 12,
+									padding: 8,
+									width: 40,
+									height: 40,
+									alignItems: 'center',
+									justifyContent: 'center',
+								}}>
+									<MaterialCommunityIcons name={focused ? 'barn' : 'barn'} size={22} color={color} />
+								</View>
+							),
+						}}
+					/>
+				)}
 
-        {/* Chat is not part of tabs; accessible via floating button only */}
-        
-      </Tabs>
-    </View>
-  );
+				{/* Chat is not part of tabs; accessible via floating button only */}
+			</Tabs>
+		</View>
+	);
 }
