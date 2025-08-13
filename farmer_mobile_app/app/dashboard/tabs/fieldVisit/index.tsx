@@ -218,38 +218,71 @@ export const options = {
 };
 
 const FieldVisitScreen: React.FC = () => {
-  const [screen, setScreen] = useState<Screen>(Screen.Landing);
+  // Navigation stack to emulate auth (expo-router) push/pop slide transitions
+  const [stack, setStack] = useState<Screen[]>([Screen.Landing]);
+  const screen = stack[stack.length - 1];
+  const [prevScreen, setPrevScreen] = useState<Screen | null>(null);
+  const [direction, setDirection] = useState<'forward' | 'back' | 'replace'>('forward');
   const [category, setCategory] = useState<CategoryKey>('General Support');
   const [selected, setSelected] = useState<Expert | null>(null);
-  // Animations for landing card
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
+  const [prevSelected, setPrevSelected] = useState<Expert | null>(null); // snapshot for profile during back
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;   // landing intro
+  const scaleAnim = React.useRef(new Animated.Value(0.9)).current; // landing intro
+  const width = React.useRef(require('react-native').Dimensions.get('window').width).current;
+  const incomingTx = React.useRef(new Animated.Value(0)).current;
+  const outgoingTx = React.useRef(new Animated.Value(0)).current;
+  const incomingOpacity = React.useRef(new Animated.Value(1)).current;
+  const outgoingOpacity = React.useRef(new Animated.Value(0)).current;
 
   const filteredExperts = useMemo(() => EXPERTS.filter(e => e.category === category), [category]);
 
-  // Landing specific intro animation
-  React.useEffect(() => {
-    if (screen === Screen.Landing) {
-      fadeAnim.setValue(0);
-      scaleAnim.setValue(0.9);
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
-      ]).start();
+  // Navigation helpers mimicking push/pop
+  const push = (next: Screen) => {
+    setPrevScreen(screen);
+    setDirection('forward');
+    setPrevSelected(selected);
+    setStack(prev => [...prev, next]);
+  };
+  const pop = () => {
+    if (stack.length > 1) {
+      setPrevScreen(screen);
+      setDirection('back');
+      setPrevSelected(selected);
+      setStack(prev => prev.slice(0, prev.length - 1));
     }
-  }, [screen]);
+  };
+  const replaceAll = (next: Screen) => {
+    setPrevScreen(screen);
+    setDirection('replace');
+    setPrevSelected(null);
+    setStack([next]);
+  };
 
-  // Generic transition for every screen change
-  const transOpacity = React.useRef(new Animated.Value(1)).current;
-  const transTranslate = React.useRef(new Animated.Value(0)).current;
+  // Run fade + scale once on mount (as per provided snippet)
   React.useEffect(() => {
-    transOpacity.setValue(0);
-    transTranslate.setValue(12);
     Animated.parallel([
-      Animated.timing(transOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
-      Animated.timing(transTranslate, { toValue: 0, duration: 260, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
     ]).start();
-  }, [screen]);
+  }, []);
+
+  // Slide transition on stack change
+  React.useEffect(() => {
+    if (prevScreen !== null) {
+      // Set initial states depending on direction
+      const fromRight = direction === 'forward' || direction === 'replace';
+      incomingTx.setValue(fromRight ? width : -width);
+      outgoingTx.setValue(0);
+      incomingOpacity.setValue(1);
+      outgoingOpacity.setValue(1);
+      Animated.parallel([
+        Animated.timing(outgoingTx, { toValue: fromRight ? -width * 0.25 : width * 0.25, duration: 320, useNativeDriver: true }),
+        Animated.timing(incomingTx, { toValue: 0, duration: 340, useNativeDriver: true }),
+        Animated.timing(outgoingOpacity, { toValue: 0.3, duration: 320, useNativeDriver: true }),
+      ]).start(({ finished }) => { if (finished) setPrevScreen(null); });
+    }
+  }, [stack.length]);
 
   let content: React.ReactNode = null;
   switch (screen) {
@@ -262,7 +295,7 @@ const FieldVisitScreen: React.FC = () => {
               <Text style={styles.appTitle}>Connect with</Text>
               <Text style={styles.appTitle}>Agricultural Experts</Text>
               <Text style={styles.appSubtitle}>Get personalized agricultural advice from certified field officers. Choose from general farm support, pest control consultation, or fertilizer guidance - all delivered at your convenience.</Text>
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => setScreen(Screen.ExpertsTabbed)} accessibilityRole="button" accessibilityLabel="Connect with experts">
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => push(Screen.ExpertsTabbed)} accessibilityRole="button" accessibilityLabel="Connect with experts">
                 <Text style={styles.primaryBtnText}>Connect Experts</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -273,7 +306,7 @@ const FieldVisitScreen: React.FC = () => {
     case Screen.ExpertsTabbed:
       content = (
         <View style={styles.flex}>
-          <Header title="Experts" onBack={() => setScreen(Screen.Landing)} />
+          <Header title="Experts" onBack={() => pop()} />
           <View style={styles.tabRow}>
             {CATEGORIES.map(cat => {
               const isLong = cat.length > 15;
@@ -292,7 +325,7 @@ const FieldVisitScreen: React.FC = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.expertCard}
-                onPress={() => { setSelected(item); setScreen(Screen.Profile); }}
+                onPress={() => { setSelected(item); push(Screen.Profile); }}
                 accessibilityRole="button"
                 accessibilityLabel={`View profile of ${item.name}`}
               >
@@ -318,7 +351,7 @@ const FieldVisitScreen: React.FC = () => {
       if (selected) {
         content = (
           <View style={styles.flex}>
-            <Header title="Experts Profile" onBack={() => { setSelected(null); setScreen(Screen.ExpertsTabbed); }} />
+            <Header title="Experts Profile" onBack={() => { setSelected(null); pop(); }} />
             <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.profileCard}>
                 <Image source={selected.avatarUrl ? { uri: selected.avatarUrl } : (selected.photo || images.appLogo)} style={styles.profilePhoto} />
@@ -332,7 +365,7 @@ const FieldVisitScreen: React.FC = () => {
                   <Text style={styles.infoStripTitle}>Request Farm Visit</Text>
                   <Text style={styles.infoStripText}>Get on-site assessment and personalized guidance to improve yield and reduce risks.</Text>
                 </View>
-                <Button label="Contact Me" onPress={() => setScreen(Screen.ContactForm)} />
+                <Button label="Contact Me" onPress={() => push(Screen.ContactForm)} />
               </View>
             </ScrollView>
           </View>
@@ -342,29 +375,89 @@ const FieldVisitScreen: React.FC = () => {
     case Screen.ContactForm:
       content = (
         <View style={styles.flex}>
-          <Header title="Contact" onBack={() => setScreen(Screen.Profile)} />
-          <ContactFormInline onSubmit={() => setScreen(Screen.Confirmation)} />
+          <Header title="Contact" onBack={() => pop()} />
+          <ContactFormInline onSubmit={() => push(Screen.Confirmation)} />
         </View>
       );
       break;
     case Screen.Confirmation:
       content = (
         <View style={styles.flex}>
-          <Header title="" onBack={() => { setSelected(null); setScreen(Screen.Landing); }} />
+          <Header title="" onBack={() => { setSelected(null); replaceAll(Screen.Landing); }} />
           <View style={styles.confirmCard}>
             <View style={styles.checkCircle}><Text style={styles.checkMark}>✓</Text></View>
             <Text style={styles.confirmTitle}>Request Submitted Successfully!</Text>
             <Text style={styles.confirmMsg}>Your field visit request has been successfully submitted! Our agricultural officer will review your concerns and contact you within 24 hours to discuss available time slots and schedule the farm visit.</Text>
-            <Button label="Finish" onPress={() => { setSelected(null); setScreen(Screen.Landing); }} />
+            <Button label="Finish" onPress={() => { setSelected(null); replaceAll(Screen.Landing); }} />
           </View>
         </View>
       );
       break;
   }
 
+  // Render previous screen (snapshot) if animating
+  const renderPrev = () => {
+    if (prevScreen === null) return null;
+    // Minimal snapshot without re-running landing intro animation to avoid jump
+    let prevContent: React.ReactNode = null;
+    if (prevScreen === Screen.Landing) {
+      prevContent = (
+        <View style={styles.landingRoot}>
+          <ImageBackground source={images.officerVisitLandingImage} style={styles.bgImage} imageStyle={styles.bgImageInner}>
+            <View style={styles.bgOverlay} />
+            <View style={styles.landingCardOverlay}>
+              <Text style={styles.appTitle}>Connect with</Text>
+              <Text style={styles.appTitle}>Agricultural Experts</Text>
+              <Text style={styles.appSubtitle}>Get personalized agricultural advice from certified field officers. Choose from general farm support, pest control consultation, or fertilizer guidance - all delivered at your convenience.</Text>
+              <View style={[styles.primaryBtn,{opacity:0.85}]}> 
+                <Text style={styles.primaryBtnText}>Connect Experts</Text>
+              </View>
+            </View>
+          </ImageBackground>
+        </View>
+      );
+    } else if (prevScreen === Screen.ExpertsTabbed) {
+      prevContent = (
+        <View style={styles.flex}>
+          <Header title="Experts" />
+          <View style={styles.tabRow}>
+            {CATEGORIES.map(cat => {
+              const isLong = cat.length > 15;
+              return (
+                <View key={cat} style={[styles.tab, category === cat && styles.tabActive]}>
+                  <Text numberOfLines={2} style={[styles.tabText, isLong && styles.tabTextLong, category === cat && styles.tabTextActive]}>{cat}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      );
+    } else if (prevScreen === Screen.Profile && prevSelected) {
+      prevContent = (
+        <View style={styles.flex}>
+          <Header title="Experts Profile" />
+          <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.profileCard}>
+              <Image source={prevSelected.avatarUrl ? { uri: prevSelected.avatarUrl } : (prevSelected.photo || images.appLogo)} style={styles.profilePhoto} />
+              <Text style={styles.profileName}>{prevSelected.name}</Text>
+              <Text style={styles.profileRole}>{prevSelected.role}</Text>
+              <Text style={styles.profileDesc}>{prevSelected.description}</Text>
+            </View>
+          </ScrollView>
+        </View>
+      );
+    }
+    return (
+      <Animated.View style={[styles.transitionWrap, styles.absoluteFill, { transform: [{ translateX: outgoingTx }], opacity: outgoingOpacity }]}> 
+        {prevContent}
+      </Animated.View>
+    );
+  };
+
   return (
     <View style={styles.screenRoot}>
-      <Animated.View style={[styles.transitionWrap, { opacity: transOpacity, transform: [{ translateY: transTranslate }] }]}>
+      {renderPrev()}
+      <Animated.View style={[styles.transitionWrap, { transform: [{ translateX: incomingTx }], opacity: incomingOpacity }]}> 
         {content}
       </Animated.View>
     </View>
@@ -450,7 +543,8 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#fff' },
   listPad: { paddingBottom: 32, paddingHorizontal: 4 },
   screenRoot: { flex: 1, backgroundColor: '#fff' },
-  transitionWrap: { flex: 1 },
+  transitionWrap: { flex: 1, backgroundColor: '#fff' },
+  absoluteFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   // Expert card inline styles
   expertCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, alignItems: 'center' },
   expertAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E0E0E0' },
