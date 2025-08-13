@@ -1,10 +1,10 @@
 import checkMark from '../assets/images/checkmark.png';
 import landingPageImage from '../assets/images/landingPageImage.jpg';
 import locationImage from '../assets/images/location.png';
+import officerVisitLandingImage from '../assets/images/landingofficerVisit.jpg';
 import appLogo from '../assets/images/mainlogo.png';
 import notificationImage from '../assets/images/notification.png';
 import translationImage from '../assets/images/translation.png';
-import officerVisitLandingImage from '../assets/images/landingofficerVisit.jpg';
 
 export const images = {
   appLogo,
