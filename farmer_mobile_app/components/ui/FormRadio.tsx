@@ -6,6 +6,9 @@ import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
+// Ratio used for sizing the filled inner circle relative to the outer diameter
+const INNER_CIRCLE_RATIO = 0.45;
+
 /** Props for FormRadio */
 export interface FormRadioProps {
   label: string;
@@ -28,21 +31,8 @@ export const FormRadio: React.FC<FormRadioProps> = ({
   labelStyle,
   size = 22,
   color = Colors.primary?.main || '#52B788',
-}) => (
-  <TouchableOpacity style={[styles.row, style]} onPress={onSelect}>
-    <View
-      style={[
-        styles.outer,
-        { width: size, height: size, borderRadius: size / 2, borderColor: color },
-        selected && { backgroundColor: color + '22' },
-      ]}
-    >
-      {selected && <View style={[styles.inner, { backgroundColor: color, width: size * 0.45, height: size * 0.45, borderRadius: (size * 0.45)/2 }]} />}
-    </View>
-    <Text style={[styles.label, labelStyle]}>{label}</Text>
-  </TouchableOpacity>
 }) => {
-  const innerCircleSize = size * 0.45;
+  const innerCircleSize = size * INNER_CIRCLE_RATIO;
   const innerCircleRadius = innerCircleSize / 2;
   return (
     <TouchableOpacity style={[styles.row, style]} onPress={onSelect}>

@@ -6,6 +6,9 @@ import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
+// Ratio used to derive rounded corner size from checkbox side length (tuned visually)
+const CHECKBOX_BORDER_RADIUS_RATIO = 0.27;
+
 /** Props for FormCheckbox */
 export interface FormCheckboxProps {
   label: string;

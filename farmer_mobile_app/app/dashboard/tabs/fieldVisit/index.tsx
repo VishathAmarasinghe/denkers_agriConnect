@@ -1,6 +1,6 @@
 // Officer Visit Services Flow Implementation
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput, useWindowDimensions } from 'react-native';
 import { images } from '@/constants';
 // (Temporarily using local types until extracted to shared location)
 
@@ -229,7 +229,8 @@ const FieldVisitScreen: React.FC = () => {
   // Animation values
   const fadeAnim = React.useRef(new Animated.Value(0)).current;   // landing intro
   const scaleAnim = React.useRef(new Animated.Value(0.9)).current; // landing intro
-  const width = React.useRef(Dimensions.get('window').width).current;
+  // Use current window width (responsive & orientation-aware)
+  const { width } = useWindowDimensions();
   const incomingTx = React.useRef(new Animated.Value(0)).current;
   const outgoingTx = React.useRef(new Animated.Value(0)).current;
   const incomingOpacity = React.useRef(new Animated.Value(1)).current;
