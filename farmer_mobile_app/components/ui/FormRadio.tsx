@@ -41,7 +41,36 @@ export const FormRadio: React.FC<FormRadioProps> = ({
     </View>
     <Text style={[styles.label, labelStyle]}>{label}</Text>
   </TouchableOpacity>
-);
+}) => {
+  const innerCircleSize = size * 0.45;
+  const innerCircleRadius = innerCircleSize / 2;
+  return (
+    <TouchableOpacity style={[styles.row, style]} onPress={onSelect}>
+      <View
+        style={[
+          styles.outer,
+          { width: size, height: size, borderRadius: size / 2, borderColor: color },
+          selected && { backgroundColor: color + '22' },
+        ]}
+      >
+        {selected && (
+          <View
+            style={[
+              styles.inner,
+              {
+                backgroundColor: color,
+                width: innerCircleSize,
+                height: innerCircleSize,
+                borderRadius: innerCircleRadius,
+              },
+            ]}
+          />
+        )}
+      </View>
+      <Text style={[styles.label, labelStyle]}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
