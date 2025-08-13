@@ -4,6 +4,7 @@ import { View, StyleSheet } from 'react-native';
 import { Snackbar as PaperSnackbar } from 'react-native-paper';
 import { hideSnackbar } from '@/slice/snackbarSlice/snackbarSlice';
 import { useAppDispatch, useAppSelector } from '@/slice/store';
+import { Colors } from '@/constants/Colors';
 
 const Snackbar = () => {
   const dispatch = useAppDispatch();
@@ -16,17 +17,12 @@ const Snackbar = () => {
         visible={snackbarSlice.visible}
         onDismiss={() => dispatch(hideSnackbar())}
         duration={PaperSnackbar.DURATION_SHORT}
-        style={{
-          borderRadius: 20,
-          backgroundColor:
-            snackbarSlice.type === 'success'
-              ? '#4CAF50'
-              : snackbarSlice?.type === 'error'
-                ? '#FF0000'
-                : snackbarSlice?.type === 'warning'
-                  ? '#FFC107'
-                  : '#2196F3',
-        }}
+        style={[
+          styles.snackbar,
+          snackbarSlice.type === 'success' && { backgroundColor: '#4CAF50' },
+          snackbarSlice.type === 'error' && { backgroundColor: '#FF0000' },
+          snackbarSlice.type === 'warning' && { backgroundColor: '#FFC107' },
+        ]}
       >
         {snackbarSlice.message}
       </PaperSnackbar>
@@ -43,6 +39,10 @@ const styles = StyleSheet.create({
     zIndex: 999999999, // Very high z-index
     elevation: 99999, // For Android
     pointerEvents: 'box-none',
+  },
+  snackbar: {
+    borderRadius: 20,
+    backgroundColor: Colors.primary?.dark || '#2196F3',
   },
 });
 
