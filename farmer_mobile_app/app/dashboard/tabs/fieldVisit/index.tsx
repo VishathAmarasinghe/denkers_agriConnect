@@ -409,7 +409,7 @@ const FieldVisitScreen: React.FC = () => {
               <Text style={styles.appTitle}>Connect with</Text>
               <Text style={styles.appTitle}>Agricultural Experts</Text>
               <Text style={styles.appSubtitle}>Get personalized agricultural advice from certified field officers. Choose from general farm support, pest control consultation, or fertilizer guidance - all delivered at your convenience.</Text>
-              <View style={[styles.primaryBtn,{opacity:0.85}]}> 
+              <View style={[styles.primaryBtn, styles.primaryBtnFaded]}> 
                 <Text style={styles.primaryBtnText}>Connect Experts</Text>
               </View>
             </View>
@@ -512,6 +512,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   marginHorizontal: 16, // consistent outer horizontal margin
   },
+  primaryBtnFaded: { opacity: 0.85 },
   primaryBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   secondaryBtn: {
     borderWidth: 1,
