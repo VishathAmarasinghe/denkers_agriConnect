@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 /** Props for FormRadio */
 export interface FormRadioProps {
@@ -26,7 +27,7 @@ export const FormRadio: React.FC<FormRadioProps> = ({
   style,
   labelStyle,
   size = 22,
-  color = '#52B788',
+  color = Colors.primary?.main || '#52B788',
 }) => (
   <TouchableOpacity style={[styles.row, style]} onPress={onSelect}>
     <View
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   inner: {},
-  label: { fontSize: 14, color: '#444', flexShrink: 1 },
+  label: { fontSize: 14, color: Colors.text?.secondary || '#444', flexShrink: 1 },
 });
 
 export default FormRadio;

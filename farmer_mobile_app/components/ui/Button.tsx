@@ -4,8 +4,9 @@
  * - Accepts custom color, disabled state, and style overrides.
  * - Intentionally minimal to stay reusable across features.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 /** Props for Button */
 export interface ButtonProps {
@@ -18,7 +19,8 @@ export interface ButtonProps {
   color?: string; // primary color
 }
 
-const DEFAULT_COLOR = '#52B788';
+// Default brand accent (fallback if no color prop passed)
+const DEFAULT_COLOR = Colors.primary?.main || '#52B788';
 
 /**
  * Renders a pressable button with variant styling.
@@ -33,20 +35,29 @@ export const Button: React.FC<ButtonProps> = ({
   color = DEFAULT_COLOR,
 }) => {
   const isOutline = variant === 'outline';
+  const paletteColor = color || DEFAULT_COLOR;
+  const containerStyle = useMemo(
+    () => [
+      styles.base,
+      isOutline ? styles.outline : styles.filled,
+      { borderColor: paletteColor, backgroundColor: isOutline ? 'transparent' : paletteColor },
+      disabled && styles.disabled,
+      style,
+    ],
+    [isOutline, paletteColor, disabled, style]
+  );
+  const labelStyleCombined = useMemo(
+    () => [styles.text, { color: isOutline ? paletteColor : Colors.primary.contrastText }, textStyle],
+    [isOutline, paletteColor, textStyle]
+  );
   return (
     <TouchableOpacity
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={[
-        styles.base,
-        { backgroundColor: isOutline ? 'transparent' : color, borderColor: color },
-        isOutline && styles.outline,
-        disabled && styles.disabled,
-        style,
-      ]}
+      style={containerStyle}
     >
-      <Text style={[styles.text, { color: isOutline ? color : '#fff' }, textStyle]}>{label}</Text>
+      <Text style={labelStyleCombined}>{label}</Text>
     </TouchableOpacity>
   );
 };
@@ -61,6 +72,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   outline: { borderWidth: 1 },
+  filled: {},
   text: { fontWeight: '600', fontSize: 16 },
   disabled: { opacity: 0.5 },
 });

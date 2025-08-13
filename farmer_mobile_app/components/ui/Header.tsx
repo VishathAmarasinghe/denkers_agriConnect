@@ -7,6 +7,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 
 /** Props for Header */
 export interface HeaderProps {
@@ -29,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   style,
   titleStyle,
   showPlaceholderSides = true,
-  color = '#222',
+  color = Colors.text?.primary || '#222',
 }) => (
   <View style={[styles.root, style]}>
     {onBack ? (

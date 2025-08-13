@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 /** Props for FormCheckbox */
 export interface FormCheckboxProps {
@@ -26,7 +27,7 @@ export const FormCheckbox: React.FC<FormCheckboxProps> = ({
   style,
   labelStyle,
   size = 22,
-  color = '#52B788',
+  color = Colors.primary?.main || '#52B788',
 }) => (
   <TouchableOpacity style={[styles.row, style]} onPress={() => onChange(!checked)}>
     <View
@@ -49,10 +50,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background?.default || '#fff',
   },
   tick: { fontSize: 14, fontWeight: '700' },
-  label: { fontSize: 14, color: '#444', flexShrink: 1 },
+  label: { fontSize: 14, color: Colors.text?.secondary || '#444', flexShrink: 1 },
 });
 
 export default FormCheckbox;
