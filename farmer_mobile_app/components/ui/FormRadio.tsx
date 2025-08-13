@@ -1,6 +1,11 @@
+/**
+ * FormRadio – controlled radio button with label.
+ * Use alongside a group controller to manage mutually exclusive selection.
+ */
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
+/** Props for FormRadio */
 export interface FormRadioProps {
   label: string;
   selected: boolean;
@@ -11,6 +16,9 @@ export interface FormRadioProps {
   color?: string;
 }
 
+/**
+ * Renders a single radio option.
+ */
 export const FormRadio: React.FC<FormRadioProps> = ({
   label,
   selected,

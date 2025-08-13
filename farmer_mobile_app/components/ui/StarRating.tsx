@@ -1,6 +1,12 @@
+/**
+ * StarRating component.
+ * Displays a fixed number of stars (default 5) with an active value.
+ * Pure presentational – no interaction logic included.
+ */
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 
+/** Props for StarRating */
 export interface StarRatingProps {
   value: number; // 0-5
   size?: number;
@@ -10,6 +16,9 @@ export interface StarRatingProps {
   inactiveColor?: string;
 }
 
+/**
+ * Renders a row of stars highlighting the first `value` stars.
+ */
 export const StarRating: React.FC<StarRatingProps> = ({
   value,
   size = 16,

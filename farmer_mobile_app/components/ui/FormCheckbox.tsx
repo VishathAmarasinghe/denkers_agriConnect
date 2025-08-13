@@ -1,6 +1,11 @@
+/**
+ * FormCheckbox – controlled checkbox with label.
+ * Touching anywhere on the row toggles state (improves accessibility).
+ */
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
+/** Props for FormCheckbox */
 export interface FormCheckboxProps {
   label: string;
   checked: boolean;
@@ -11,6 +16,9 @@ export interface FormCheckboxProps {
   color?: string;
 }
 
+/**
+ * Renders a checkbox with a text label.
+ */
 export const FormCheckbox: React.FC<FormCheckboxProps> = ({
   label,
   checked,

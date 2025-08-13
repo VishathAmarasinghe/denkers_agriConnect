@@ -1,6 +1,13 @@
+/**
+ * Generic Button component.
+ * - Supports primary (filled) and outline variants.
+ * - Accepts custom color, disabled state, and style overrides.
+ * - Intentionally minimal to stay reusable across features.
+ */
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
+/** Props for Button */
 export interface ButtonProps {
   label: string;
   onPress?: () => void;
@@ -13,6 +20,9 @@ export interface ButtonProps {
 
 const DEFAULT_COLOR = '#52B788';
 
+/**
+ * Renders a pressable button with variant styling.
+ */
 export const Button: React.FC<ButtonProps> = ({
   label,
   onPress,

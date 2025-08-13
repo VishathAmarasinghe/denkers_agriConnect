@@ -1,8 +1,14 @@
-
+/**
+ * Reusable top Header component.
+ * - Optional back button (renders placeholder for layout symmetry when absent)
+ * - Accepts a right-side React node (actions, icons, etc.)
+ * - Keeps layout consistent across screens.
+ */
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+/** Props for Header */
 export interface HeaderProps {
   title?: string;
   onBack?: () => void;
@@ -13,6 +19,9 @@ export interface HeaderProps {
   color?: string;
 }
 
+/**
+ * Renders a header bar with optional back button, centered title, and right slot.
+ */
 export const Header: React.FC<HeaderProps> = ({
   title,
   onBack,
