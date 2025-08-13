@@ -1,6 +1,6 @@
 import { APPLICATION_FARMER } from '@/config/config';
 import { useAppSelector } from '@/slice/store';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -65,7 +65,7 @@ export default function Layout() {
 								alignItems: 'center',
 								justifyContent: 'center',
 							}}>
-								<MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+								<Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
 							</View>
 						),
 					}}
@@ -88,7 +88,7 @@ export default function Layout() {
 									alignItems: 'center',
 									justifyContent: 'center',
 								}}>
-									<MaterialCommunityIcons name={focused ? 'flask' : 'flask-outline'} size={22} color={color} />
+									<Ionicons name={focused ? 'flask' : 'flask-outline'} size={22} color={color} />
 								</View>
 							),
 						}}
@@ -112,7 +112,7 @@ export default function Layout() {
 									alignItems: 'center',
 									justifyContent: 'center',
 								}}>
-									<MaterialCommunityIcons name={focused ? 'account-group' : 'account-group-outline'} size={22} color={color} />
+									<Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} />
 								</View>
 							),
 						}}
@@ -136,7 +136,7 @@ export default function Layout() {
 									alignItems: 'center',
 									justifyContent: 'center',
 								}}>
-									<MaterialCommunityIcons name={focused ? 'tractor-variant' : 'tractor-variant'} size={22} color={color} />
+									<Ionicons name={focused ? 'car' : 'car-outline'} size={22} color={color} />
 								</View>
 							),
 						}}
@@ -160,7 +160,7 @@ export default function Layout() {
 									alignItems: 'center',
 									justifyContent: 'center',
 								}}>
-									<MaterialCommunityIcons name={focused ? 'barn' : 'barn'} size={22} color={color} />
+									<Ionicons name={focused ? 'business' : 'business-outline'} size={22} color={color} />
 								</View>
 							),
 						}}
