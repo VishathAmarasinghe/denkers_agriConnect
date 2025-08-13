@@ -240,7 +240,6 @@ export default function MachineRentScreen() {
                 <View className="flex-row space-x-2">
                   <Button
                     mode="outlined"
-                    size="small"
                     icon={() => <MaterialIcons name="visibility" size={16} color="#055476" />}
                     onPress={() => {}}
                   >
@@ -250,7 +249,7 @@ export default function MachineRentScreen() {
                   {machine.status === 'available' && (
                     <Button
                       mode="contained"
-                      size="small"
+
                       icon={() => <MaterialIcons name="add-shopping-cart" size={16} color="white" />}
                       onPress={() => {}}
                     >
@@ -261,7 +260,7 @@ export default function MachineRentScreen() {
                   {machine.status === 'rented' && (
                     <Button
                       mode="outlined"
-                      size="small"
+
                       icon={() => <MaterialIcons name="schedule" size={16} color="#055476" />}
                       onPress={() => {}}
                     >

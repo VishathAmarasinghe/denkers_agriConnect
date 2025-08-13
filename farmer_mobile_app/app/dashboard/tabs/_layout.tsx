@@ -1,6 +1,6 @@
 import { APPLICATION_FARMER } from '@/config/config';
 import { useAppSelector } from '@/slice/store';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 
@@ -9,41 +9,49 @@ export default function Layout() {
   const roles = authSlice?.roles || [];
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-transparent">
       <Tabs
         screenOptions={({ route }) => ({
-          tabBarActiveTintColor: '#52B788',
-          tabBarInactiveTintColor: '#9BBBC8',
+          headerShown: false,
+          sceneStyle: { backgroundColor: 'transparent' },
+          tabBarActiveTintColor: '#FFFFFF',
+          tabBarInactiveTintColor: '#D8F1E5',
           tabBarStyle: {
-            width: '85%',
-            marginHorizontal: 'auto',
-            backgroundColor: '#ffffff',
-            borderRadius: 25,
-            paddingBottom: 0,
-            overflow: 'hidden',
-            height: 70,
+            width: '100%',
+            backgroundColor: 'transparent',
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            paddingBottom: 6,
+            overflow: 'visible',
+            height: 88,
             justifyContent: 'center',
             alignSelf: 'center',
             flexDirection: 'column',
-            marginBottom: 20,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-            borderTopWidth: 1,
-            borderTopColor: '#E3F2FD',
+            marginBottom: 0,
+            shadowColor: 'transparent',
+            borderTopWidth: 0,
           },
+          tabBarBackground: () => (
+            <View
+              style={{
+                position: 'absolute',
+                left: '-5%',
+                width: '110%',
+                height: '100%',
+                backgroundColor: '#52B788',
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
+              }}
+            />
+          ),
           tabBarLabelStyle: {
             fontSize: 12,
-            fontWeight: '600',
+            fontWeight: '700',
             marginTop: 4,
           },
         })}
       >
+        {/* No explicit index route under tabs */}
         {/* HOME TAB */}
         {roles.includes(APPLICATION_FARMER) && (
           <Tabs.Screen
@@ -52,55 +60,41 @@ export default function Layout() {
               title: 'Home',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <MaterialIcons name="home" size={24} color={focused ? '#52B788' : '#9BBBC8'} />
+                <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
               ),
             }}
           />
         )}
 
-        {/* CHAT AGENT TAB */}
+        {/* SOIL TEST TAB */}
         {roles.includes(APPLICATION_FARMER) && (
           <Tabs.Screen
-            name="chatAgent"
+            name="soilManagement"
             options={{
-              title: 'Chat',
+              title: 'Soil Test',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <MaterialIcons name="chat" size={24} color={focused ? '#52B788' : '#9BBBC8'} />
+                <Ionicons name={focused ? 'leaf' : 'leaf-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
               ),
             }}
           />
         )}
 
-        {/* FIELD VISIT TAB */}
+        {/* OFFICERS TAB */}
         {roles.includes(APPLICATION_FARMER) && (
           <Tabs.Screen
             name="fieldVisit"
             options={{
-              title: 'Field Visit',
+              title: 'Officers',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <MaterialIcons name="location-on" size={24} color={focused ? '#52B788' : '#9BBBC8'} />
+                <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
               ),
             }}
           />
         )}
 
-        {/* HARVEST HUB TAB */}
-        {roles.includes(APPLICATION_FARMER) && (
-          <Tabs.Screen
-            name="harvestHub"
-            options={{
-              title: 'Harvest',
-              headerShown: false,
-              tabBarIcon: ({ focused }) => (
-                <MaterialIcons name="agriculture" size={24} color={focused ? '#52B788' : '#9BBBC8'} />
-              ),
-            }}
-          />
-        )}
-
-        {/* MACHINE RENT TAB */}
+        {/* MACHINES TAB */}
         {roles.includes(APPLICATION_FARMER) && (
           <Tabs.Screen
             name="machineRent"
@@ -108,25 +102,28 @@ export default function Layout() {
               title: 'Machines',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <MaterialIcons name="build" size={24} color={focused ? '#52B788' : '#9BBBC8'} />
+                <Ionicons name={focused ? 'construct' : 'construct-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
               ),
             }}
           />
         )}
 
-        {/* SOIL MANAGEMENT TAB */}
+        {/* HARVEST TAB */}
         {roles.includes(APPLICATION_FARMER) && (
           <Tabs.Screen
-            name="soilManagement"
+            name="harvestHub"
             options={{
-              title: 'Soil',
+              title: 'Harvest',
               headerShown: false,
               tabBarIcon: ({ focused }) => (
-                <MaterialIcons name="eco" size={24} color={focused ? '#52B788' : '#9BBBC8'} />
+                <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={focused ? '#FFFFFF' : '#D8F1E5'} />
               ),
             }}
           />
         )}
+
+        {/* Chat is not part of tabs; accessible via floating button only */}
+        
       </Tabs>
     </View>
   );
