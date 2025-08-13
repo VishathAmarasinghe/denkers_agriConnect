@@ -1,112 +1,153 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { ScrollView, Text, View } from 'react-native';
-import { Button, Card, Paragraph, Title } from 'react-native-paper';
+import { ImageBackground, Pressable, ScrollView, Text, View, Dimensions, Image } from 'react-native';
+import { Card } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const { height: screenHeight } = Dimensions.get('window');
+  const contentBottomPadding = 120; // ensure visible above tab bar
+
   return (
-    <SafeAreaView className="flex-1 bg-blue-50">
-      <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="mb-6 items-center py-5">
-          <MaterialIcons name="agriculture" size={32} color="#055476" />
-          <Text className="mt-2 text-3xl font-bold text-blue-800">AgriConnect</Text>
-          <Text className="mt-1 text-base text-gray-600">Smart Farming Dashboard</Text>
-        </View>
+    <SafeAreaView className="flex-1 bg-transparent">
+      <ImageBackground
+        source={require('@/assets/images/landingPageImage.jpg')}
+        resizeMode="cover"
+        style={{ flex: 1 }}
+      >
+        <View className="flex-1 bg-black/20">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: contentBottomPadding }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Location pill and logo */}
+            <View className="mt-3 flex-row items-center justify-between">
+              <View className="flex-1 flex-row items-center rounded-2xl bg-white/25 px-4 py-3">
+                <MaterialIcons name="location-on" size={20} color="#FFFFFF" />
+                <Text className="ml-2 text-base font-semibold text-white">Galenbidunuwewa</Text>
+              </View>
+              <Image source={require('@/assets/images/mainlogo.png')} className="ml-3 h-10 w-10 rounded-full" />
+            </View>
 
-        {/* Quick Stats */}
-        <View className="mb-5 flex-row justify-between">
-          <Card className="mx-1 flex-1 shadow-md">
-            <Card.Content>
-              <View className="flex-row items-center">
-                <MaterialIcons name="trending-up" size={24} color="#4CAF50" />
-                <View className="ml-3">
-                  <Title className="mb-0 text-xl text-blue-800">85%</Title>
-                  <Paragraph className="mb-0 text-xs text-gray-600">Crop Health</Paragraph>
+            {/* Greetings + weather */}
+            <View className="mt-6">
+              <Text className="text-3xl font-extrabold text-white">Hi, Good Morning...</Text>
+              <View className="mt-3 flex-row items-start justify-between">
+                <Text className="text-[88px] leading-none font-extrabold text-white">27°C</Text>
+                <View className="items-end pt-2">
+                  <View className="flex-row items-center">
+                    <MaterialIcons name="cloud" size={28} color="#FFFFFF" />
+                    <Text className="ml-2 text-xl font-semibold text-white">Partly Cloudy</Text>
+                  </View>
+                  <Text className="mt-2 text-base font-semibold text-white">11:30 AM | 9 Aug</Text>
                 </View>
               </View>
-            </Card.Content>
-          </Card>
 
-          <Card className="mx-1 flex-1 shadow-md">
-            <Card.Content>
-              <View className="flex-row items-center">
-                <MaterialIcons name="water-drop" size={24} color="#2196F3" />
-                <View className="ml-3">
-                  <Title className="mb-0 text-xl text-blue-800">72%</Title>
-                  <Paragraph className="mb-0 text-xs text-gray-600">Soil Moisture</Paragraph>
+              {/* Badges */}
+              <View className="mt-2 flex-row">
+                <View className="mr-3 flex-row items-center rounded-xl bg-white/25 px-3 py-2">
+                  <MaterialIcons name="air" size={18} color="#FFFFFF" />
+                  <Text className="ml-2 text-sm font-semibold text-white">2.4km/h</Text>
+                </View>
+                <View className="flex-row items-center rounded-xl bg-white/25 px-3 py-2">
+                  <MaterialIcons name="water-drop" size={18} color="#FFFFFF" />
+                  <Text className="ml-2 text-sm font-semibold text-white">72.5%</Text>
                 </View>
               </View>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Recent Activities */}
-        <Card className="mb-5 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-blue-800">Recent Activities</Title>
-
-            <View className="flex-row items-center border-b border-blue-100 py-3">
-              <MaterialIcons name="schedule" size={20} color="#055476" />
-              <Text className="ml-3 flex-1 text-sm text-gray-800">Field inspection completed - North Field</Text>
-              <Text className="ml-2 text-xs text-gray-500">2 hours ago</Text>
             </View>
 
-            <View className="flex-row items-center border-b border-blue-100 py-3">
-              <MaterialIcons name="notifications" size={20} color="#FF9800" />
-              <Text className="ml-3 flex-1 text-sm text-gray-800">Irrigation system maintenance due</Text>
-              <Text className="ml-2 text-xs text-gray-500">5 hours ago</Text>
-            </View>
-
-            <View className="flex-row items-center py-3">
-              <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
-              <Text className="ml-3 flex-1 text-sm text-gray-800">Harvest planning scheduled</Text>
-              <Text className="ml-2 text-xs text-gray-500">1 day ago</Text>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="mb-5 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-blue-800">Quick Actions</Title>
-
-            <View className="space-y-3">
-              <Button
-                mode="contained"
-                className="mb-2"
-                icon={() => <MaterialIcons name="add" size={20} color="white" />}
-                onPress={() => {}}
-              >
-                New Field Visit
-              </Button>
-
-              <Button
-                mode="outlined"
-                className="mb-2"
-                icon={() => <MaterialIcons name="chat" size={20} color="#055476" />}
-                onPress={() => {}}
-              >
-                Chat with AI
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Weather Info */}
-        <Card className="mb-5 shadow-md">
-          <Card.Content>
-            <View className="flex-row items-center">
-              <MaterialIcons name="wb-sunny" size={32} color="#FF9800" />
-              <View className="ml-4">
-                <Title className="mb-0 text-2xl text-blue-800">24°C</Title>
-                <Paragraph className="mb-1 text-base text-gray-600">Partly Cloudy</Paragraph>
-                <Text className="text-xs text-gray-500">North Field, Farm Zone</Text>
+            {/* Actions grid - glass cards over image */}
+            <View className="mt-6">
+              <View className="flex-row">
+                <View className="mr-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/soilManagement')}
+                    className="items-center justify-center rounded-2xl bg-white/85"
+                    style={{ height: 120 }}
+                  >
+                    <MaterialIcons name="science" size={44} color="#0E2230" />
+                  </Pressable>
+                  <Text className="mt-3 text-lg font-extrabold text-white">Soil Testing</Text>
+                </View>
+                <View className="ml-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/fieldVisit')}
+                    className="items-center justify-center rounded-2xl bg-white/85"
+                    style={{ height: 120 }}
+                  >
+                    <MaterialIcons name="groups" size={44} color="#0E2230" />
+                  </Pressable>
+                  <Text className="mt-3 text-lg font-extrabold text-white">Officer Visit</Text>
+                </View>
+              </View>
+              <View className="mt-4 flex-row">
+                <View className="mr-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/machineRent')}
+                    className="items-center justify-center rounded-2xl bg-white/85"
+                    style={{ height: 120 }}
+                  >
+                    <MaterialIcons name="agriculture" size={44} color="#0E2230" />
+                  </Pressable>
+                  <Text className="mt-3 text-lg font-extrabold text-white">Rent Machine</Text>
+                </View>
+                <View className="ml-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/harvestHub')}
+                    className="items-center justify-center rounded-2xl bg-white/85"
+                    style={{ height: 120 }}
+                  >
+                    <MaterialIcons name="home-work" size={44} color="#0E2230" />
+                  </Pressable>
+                  <Text className="mt-3 text-lg font-extrabold text-white">Harvest Hub</Text>
+                </View>
               </View>
             </View>
-          </Card.Content>
-        </Card>
-      </ScrollView>
+
+            {/* Recent Activities - translucent cards */}
+            <View className="mt-8">
+              <Text className="mb-4 text-2xl font-extrabold text-white">Recent Activities</Text>
+              <Card className="mb-3 bg-white/90">
+                <Card.Content>
+                  <View className="flex-row items-center">
+                    <MaterialIcons name="schedule" size={20} color="#055476" />
+                    <Text className="ml-3 flex-1 text-sm text-gray-800">Field inspection completed - North Field</Text>
+                    <Text className="ml-2 text-xs text-gray-500">2 hours ago</Text>
+                  </View>
+                </Card.Content>
+              </Card>
+              <Card className="mb-3 bg-white/90">
+                <Card.Content>
+                  <View className="flex-row items-center">
+                    <MaterialIcons name="notifications" size={20} color="#FF9800" />
+                    <Text className="ml-3 flex-1 text-sm text-gray-800">Irrigation system maintenance due</Text>
+                    <Text className="ml-2 text-xs text-gray-500">5 hours ago</Text>
+                  </View>
+                </Card.Content>
+              </Card>
+              <Card className="bg-white/90">
+                <Card.Content>
+                  <View className="flex-row items-center">
+                    <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
+                    <Text className="ml-3 flex-1 text-sm text-gray-800">Harvest planning scheduled</Text>
+                    <Text className="ml-2 text-xs text-gray-500">1 day ago</Text>
+                  </View>
+                </Card.Content>
+              </Card>
+            </View>
+          </ScrollView>
+
+          {/* Floating Chat Button */}
+          <Pressable
+            onPress={() => router.push('/dashboard/chatAgent')}
+            className="absolute bottom-[90px] right-5 h-16 w-16 items-center justify-center rounded-full bg-[#52B788] shadow-lg"
+          >
+            <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
