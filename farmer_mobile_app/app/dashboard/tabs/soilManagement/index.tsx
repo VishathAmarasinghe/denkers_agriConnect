@@ -1,336 +1,148 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { Button, Card, Chip, Title } from 'react-native-paper';
+import { 
+  ImageBackground, 
+  Text, 
+  View, 
+  TouchableOpacity, 
+  StyleSheet 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface SoilTest {
-  id: string;
-  field: string;
-  date: string;
-  ph: number;
-  nitrogen: number;
-  phosphorus: number;
-  potassium: number;
-  organicMatter: number;
-  status: 'optimal' | 'good' | 'needs-improvement' | 'poor';
-}
+import { router } from 'expo-router';
 
 export default function SoilManagementScreen() {
-  const [soilTests] = useState<SoilTest[]>([
-    {
-      id: '1',
-      field: 'North Field',
-      date: 'Oct 15, 2024',
-      ph: 6.8,
-      nitrogen: 45,
-      phosphorus: 32,
-      potassium: 28,
-      organicMatter: 3.2,
-      status: 'optimal',
-    },
-    {
-      id: '2',
-      field: 'South Field',
-      date: 'Oct 10, 2024',
-      ph: 5.9,
-      nitrogen: 38,
-      phosphorus: 25,
-      potassium: 22,
-      organicMatter: 2.8,
-      status: 'good',
-    },
-    {
-      id: '3',
-      field: 'East Field',
-      date: 'Oct 5, 2024',
-      ph: 5.2,
-      nitrogen: 28,
-      phosphorus: 18,
-      potassium: 15,
-      organicMatter: 2.1,
-      status: 'needs-improvement',
-    },
-    {
-      id: '4',
-      field: 'West Field',
-      date: 'Sep 30, 2024',
-      ph: 4.8,
-      nitrogen: 22,
-      phosphorus: 12,
-      potassium: 10,
-      organicMatter: 1.5,
-      status: 'poor',
-    },
-  ]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'optimal':
-        return 'bg-green-100 text-green-800';
-      case 'good':
-        return 'bg-blue-100 text-blue-800';
-      case 'needs-improvement':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'poor':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  // Handler functions for button actions
+  const handleRequestService = () => {
+    // Navigate to service request screen
+    router.push('/dashboard/tabs/soilManagement/serviceRequest');
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'optimal':
-        return 'check-circle';
-      case 'good':
-        return 'thumb-up';
-      case 'needs-improvement':
-        return 'warning';
-      case 'poor':
-        return 'error';
-      default:
-        return 'help';
-    }
-  };
-
-  const getNutrientColor = (value: number, optimal: number, range: number) => {
-    if (value >= optimal - range && value <= optimal + range) return '#4CAF50';
-    if (value >= optimal - range * 1.5 && value <= optimal + range * 1.5) return '#FF9800';
-    return '#F44336';
+  const handleLabReports = () => {
+    router.push('/dashboard/tabs/soilManagement/TestReports')
   };
 
   return (
     <SafeAreaView className="flex-1 bg-blue-50">
-      <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="mb-6 rounded-lg bg-green-600 p-4">
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-2xl font-bold text-white">Soil Management</Text>
-              <Text className="mt-1 text-green-200">Monitor and improve soil health</Text>
-            </View>
-            <MaterialIcons name="eco" size={40} color="white" />
+      <ImageBackground
+        source={require('../../../../assets/images/soil_management_bg.jpg')}
+        className="flex-1"
+        resizeMode="cover"
+      >
+         <View style={styles.overlay} />
+        
+        <View style={styles.card}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Know Your Soil</Text>
+            <Text style={styles.subtitle}>Grow Better Crops</Text>
           </View>
-        </View>
-
-        {/* Soil Health Overview */}
-        <View className="mb-6 flex-row justify-between">
-          <Card className="mx-1 flex-1 bg-green-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
-              <Text className="text-lg font-bold text-green-800">1</Text>
-              <Text className="text-xs text-green-600">Optimal</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-blue-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="thumb-up" size={24} color="#2196F3" />
-              <Text className="text-lg font-bold text-blue-800">1</Text>
-              <Text className="text-xs text-blue-600">Good</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-yellow-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="warning" size={24} color="#FF9800" />
-              <Text className="text-lg font-bold text-yellow-800">1</Text>
-              <Text className="text-xs text-yellow-600">Needs Work</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-red-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="error" size={24} color="#F44336" />
-              <Text className="text-lg font-bold text-red-800">1</Text>
-              <Text className="text-xs text-red-600">Poor</Text>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Latest Soil Test Results */}
-        <Card className="mb-6 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-green-800">Latest Soil Test Results</Title>
-
-            {soilTests.slice(0, 2).map(test => (
-              <View key={test.id} className="mb-4 rounded-lg bg-gray-50 p-3">
-                <View className="mb-3 flex-row items-center justify-between">
-                  <Text className="text-lg font-semibold text-gray-800">{test.field}</Text>
-                  <Chip className={getStatusColor(test.status)}>
-                    {test.status.replace('-', ' ').charAt(0).toUpperCase() + test.status.replace('-', ' ').slice(1)}
-                  </Chip>
-                </View>
-
-                <Text className="mb-3 text-sm text-gray-600">Tested on {test.date}</Text>
-
-                <View className="space-y-2">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm text-gray-700">pH Level</Text>
-                    <View className="flex-row items-center">
-                      <View
-                        className={`mr-2 h-3 w-3 rounded-full ${test.ph >= 6.0 && test.ph <= 7.0 ? 'bg-green-500' : test.ph >= 5.5 && test.ph <= 7.5 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      />
-                      <Text className="text-sm font-medium">{test.ph}</Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm text-gray-700">Nitrogen (N)</Text>
-                    <View className="flex-row items-center">
-                      <View
-                        className={`mr-2 h-3 w-3 rounded-full ${getNutrientColor(test.nitrogen, 40, 10) === '#4CAF50' ? 'bg-green-500' : getNutrientColor(test.nitrogen, 40, 10) === '#FF9800' ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      />
-                      <Text className="text-sm font-medium">{test.nitrogen} ppm</Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm text-gray-700">Organic Matter</Text>
-                    <View className="flex-row items-center">
-                      <View
-                        className={`mr-2 h-3 w-3 rounded-full ${test.organicMatter >= 3.0 ? 'bg-green-500' : test.organicMatter >= 2.0 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      />
-                      <Text className="text-sm font-medium">{test.organicMatter}%</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </Card.Content>
-        </Card>
-
-        {/* All Soil Tests */}
-        <View className="mb-6">
-          <View className="mb-4 flex-row items-center justify-between">
-            <Title className="text-lg text-green-800">All Soil Tests</Title>
-            <Button
-              mode="contained"
-              icon={() => <MaterialIcons name="add" size={20} color="white" />}
-              onPress={() => {}}
+          
+          <Text style={styles.description}>
+            Expert soil testing with personalized recommendations for your farm!
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={styles.primaryButton} 
+              onPress={handleRequestService}
+              activeOpacity={0.8}
             >
-              Schedule Test
-            </Button>
+              <Text style={styles.primaryButtonText}>Request Service</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.secondaryButton} 
+              onPress={handleLabReports}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.secondaryButtonText}>Lab Reports</Text>
+            </TouchableOpacity>
           </View>
-
-          {soilTests.map(test => (
-            <Card key={test.id} className="mb-3 shadow-md">
-              <Card.Content className="p-4">
-                <View className="mb-3 flex-row items-start justify-between">
-                  <View className="flex-1">
-                    <Title className="mb-1 text-lg text-gray-800">{test.field}</Title>
-                    <Text className="text-sm text-gray-600">Tested on {test.date}</Text>
-                  </View>
-                  <Chip
-                    className={getStatusColor(test.status)}
-                    icon={() => (
-                      <MaterialIcons
-                        name={getStatusIcon(test.status)}
-                        size={16}
-                        color={
-                          test.status === 'optimal'
-                            ? '#4CAF50'
-                            : test.status === 'good'
-                              ? '#2196F3'
-                              : test.status === 'needs-improvement'
-                                ? '#FF9800'
-                                : '#F44336'
-                        }
-                      />
-                    )}
-                  >
-                    {test.status.replace('-', ' ').charAt(0).toUpperCase() + test.status.replace('-', ' ').slice(1)}
-                  </Chip>
-                </View>
-
-                {/* Nutrient Levels */}
-                <View className="mb-3 rounded-lg bg-gray-50 p-3">
-                  <Text className="mb-2 text-sm font-medium text-gray-800">Nutrient Levels</Text>
-                  <View className="space-y-2">
-                    <View className="flex-row justify-between">
-                      <Text className="text-xs text-gray-600">pH: {test.ph}</Text>
-                      <Text className="text-xs text-gray-600">N: {test.nitrogen} ppm</Text>
-                      <Text className="text-xs text-gray-600">P: {test.phosphorus} ppm</Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-xs text-gray-600">K: {test.potassium} ppm</Text>
-                      <Text className="text-xs text-gray-600">OM: {test.organicMatter}%</Text>
-                      <Text className="text-xs text-gray-600"></Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View className="flex-row space-x-2">
-                  <Button
-                    mode="outlined"
-                    size="small"
-                    icon={() => <MaterialIcons name="visibility" size={16} color="#055476" />}
-                    onPress={() => {}}
-                  >
-                    View Report
-                  </Button>
-                  <Button
-                    mode="contained"
-                    size="small"
-                    icon={() => <MaterialIcons name="edit" size={16} color="white" />}
-                    onPress={() => {}}
-                  >
-                    Recommendations
-                  </Button>
-                </View>
-              </Card.Content>
-            </Card>
-          ))}
         </View>
-
-        {/* Soil Health Tips */}
-        <Card className="mb-6 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-green-800">Soil Health Tips</Title>
-
-            <View className="space-y-3">
-              <View className="flex-row items-start">
-                <MaterialIcons name="water-drop" size={20} color="#2196F3" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Proper Irrigation</Text>
-                  <Text className="text-xs text-gray-600">Maintain consistent soil moisture without overwatering</Text>
-                </View>
-              </View>
-
-              <View className="flex-row items-start">
-                <MaterialIcons name="eco" size={20} color="#4CAF50" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Crop Rotation</Text>
-                  <Text className="text-xs text-gray-600">
-                    Rotate crops to prevent nutrient depletion and pest buildup
-                  </Text>
-                </View>
-              </View>
-
-              <View className="flex-row items-start">
-                <MaterialIcons name="grass" size={20} color="#8BC34A" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Cover Crops</Text>
-                  <Text className="text-xs text-gray-600">
-                    Plant cover crops to improve soil structure and fertility
-                  </Text>
-                </View>
-              </View>
-
-              <View className="flex-row items-start">
-                <MaterialIcons name="recycling" size={20} color="#FF9800" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Organic Matter</Text>
-                  <Text className="text-xs text-gray-600">
-                    Add compost and organic materials to improve soil health
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-      </ScrollView>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    marginTop: 300,
+    margin: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#27ae60',
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  buttonContainer: {
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: '#6BCF7F',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#6BCF7F',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: '#6BCF7F',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
