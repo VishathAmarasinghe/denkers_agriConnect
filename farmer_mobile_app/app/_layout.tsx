@@ -8,6 +8,7 @@ import { MD3LightTheme as DefaultPaperTheme, PaperProvider, Portal } from 'react
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import '../global.css';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 import Snackbar from '@/components/ui/Snackbar';
 import { store } from '@/slice/store';
@@ -17,6 +18,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
+    // Preload vector icon fonts used across the app (tab bar, screens)
+    ...MaterialCommunityIcons.font,
+    ...MaterialIcons.font,
     'Poppins-Black': require('../assets/fonts/Poppins-Black.ttf'),
     'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
     'Poppins-ExtraBold': require('../assets/fonts/Poppins-ExtraBold.ttf'),
