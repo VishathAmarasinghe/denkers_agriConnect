@@ -48,5 +48,14 @@ farmer_mobile_app/.idea/
 farmer_mobile_app/tmp/
 farmer_mobile_app/temp/
 
+# Backend specific ignores
+backend/node_modules/
+backend/.env
+backend/.env.*
+backend/dist/
+backend/build/
+backend/logs/
+backend/*.log
+
 # Other
 .cursor/

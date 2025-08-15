@@ -1,6 +1,6 @@
 // Google Places API Configuration
 export const GOOGLE_PLACES_CONFIG = {
-  apiKey: 'GOOGLE_PLACES_API_KEY',
+  apiKey: '',
   language: 'en',
   types: 'geocode',
   minLength: 2,
