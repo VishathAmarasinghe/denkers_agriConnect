@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ImageBackground, ScrollView, Image, TouchableOpacity, TextInput, ImageSourcePropType } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import CustomButton from '@/components/CustomButton';
 import Button from '@/components/ui/Button';
 import { images } from '@/constants';
 import { Colors } from '@/constants/Colors';
@@ -148,12 +149,87 @@ const HarvestHubScreen: React.FC = () => {
   const [category, setCategory] = React.useState<Category>('Paddy');
   const [selectedWarehouse, setSelectedWarehouse] = React.useState<Warehouse | null>(null);
   const [heroIndex, setHeroIndex] = React.useState<number>(0);
+  const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
+  const [currentMonth, setCurrentMonth] = React.useState<Date>(new Date());
   const filtered = React.useMemo(() => WAREHOUSES.filter(w => w.category === category), [category]);
 
   // Reset hero image when selected warehouse changes
   React.useEffect(() => {
     setHeroIndex(0);
   }, [selectedWarehouse?.id]);
+
+  // Calendar helpers (reuse logic from Machine Rent)
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    return { daysInMonth: lastDay.getDate(), startingDay: firstDay.getDay() };
+  };
+  const isDateDisabled = (date: Date) => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return date < today;
+  };
+  const isDateUnavailable = (date: Date) => {
+    return date.getDate() === 13 && date.getMonth() === 7; // sample: Aug 13 unavailable
+  };
+  const isCurrentDate = (date: Date) => {
+    const t = new Date();
+    return date.getDate() === t.getDate() && date.getMonth() === t.getMonth() && date.getFullYear() === t.getFullYear();
+  };
+  const isDateSelected = (date: Date) => selectedDates.some(d => d.toDateString() === date.toDateString());
+  const navigateMonth = (dir: 'prev'|'next') => {
+    const nm = new Date(currentMonth);
+    nm.setMonth(nm.getMonth() + (dir === 'next' ? 1 : -1));
+    setCurrentMonth(nm);
+  };
+  const handleDatePress = (date: Date) => {
+    if (isDateDisabled(date) || isDateUnavailable(date)) return;
+    const already = isDateSelected(date);
+    if (already) {
+      const remaining = selectedDates.filter(d => d.toDateString() !== date.toDateString());
+      if (remaining.length === 0) return setSelectedDates([]);
+      // keep the largest continuous range
+      const sorted = [...remaining].sort((a,b)=>a.getTime()-b.getTime());
+      const ranges: Date[][] = [];
+      let cur: Date[] = [sorted[0]];
+      for (let i=1;i<sorted.length;i++){
+        const prev=sorted[i-1], now=sorted[i];
+        const diff=(now.getTime()-prev.getTime())/(1000*60*60*24);
+        if(diff===1) cur.push(now); else { ranges.push(cur); cur=[now]; }
+      }
+      ranges.push(cur);
+      const largest = ranges.reduce((a,c)=>c.length>a.length?c:a, ranges[0]);
+      setSelectedDates(largest);
+    } else {
+      const all=[...selectedDates, date].sort((a,b)=>a.getTime()-b.getTime());
+      const filled: Date[] = [];
+      for(let i=0;i<all.length;i++){
+        filled.push(all[i]);
+        if(i<all.length-1){
+          const cur=all[i], next=all[i+1];
+          const diff=(next.getTime()-cur.getTime())/(1000*60*60*24);
+          for(let d=1; d<diff; d++){
+            const mid=new Date(cur); mid.setDate(cur.getDate()+d);
+            if(!isDateDisabled(mid) && !isDateUnavailable(mid)) filled.push(mid);
+          }
+        }
+      }
+      // unique & sorted
+      const unique = filled.sort((a,b)=>a.getTime()-b.getTime()).filter((dt,i,arr)=> i===0 || dt.getTime()!==arr[i-1].getTime());
+      setSelectedDates(unique);
+    }
+  };
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const formatMonthYear = (date: Date) => `${months[date.getMonth()]} ${date.getFullYear()}`;
+  const formatSelectedDates = () => {
+    if (selectedDates.length === 0) return '';
+    const sorted=[...selectedDates].sort((a,b)=>a.getTime()-b.getTime());
+    const s=sorted[0], e=sorted[sorted.length-1];
+    if (s.getTime()===e.getTime()) return `${s.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
+    return `${s.getDate()} - ${e.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
+  };
 
   // Render blocks
   const Landing = (
@@ -173,17 +249,22 @@ const HarvestHubScreen: React.FC = () => {
 
   const Warehouses = (
     <View style={styles.flex}>
-      <SMHeader title="Warehouses" onBack={() => setScreen(Screen.Landing)} />
+      <SMHeader
+        title="Warehouses"
+        onBack={() => setScreen(Screen.Landing)}
+        right={
+          <TouchableOpacity style={smHeaderStyles.miniBtn} onPress={() => setScreen(Screen.MarketPrices)}>
+            <Ionicons name={"trending-up-outline" as any} size={16} color={Colors.primary.contrastText} style={smHeaderStyles.miniBtnIcon} />
+            <Text style={smHeaderStyles.miniBtnText}>Market</Text>
+          </TouchableOpacity>
+        }
+      />
       <View style={styles.tabRow}>
         {CATEGORIES.map(cat => (
           <TouchableOpacity key={cat} style={[styles.tab, category === cat && styles.tabActive]} onPress={() => setCategory(cat)}>
             <Text numberOfLines={2} style={[styles.tabText, category === cat && styles.tabTextActive]}>{cat}</Text>
           </TouchableOpacity>
         ))}
-      </View>
-      <View style={styles.rowBetween}>
-        <View />
-        <Button label="Market Prices" variant="outline" onPress={() => setScreen(Screen.MarketPrices)} />
       </View>
       <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
         {filtered.map(item => (
@@ -318,25 +399,51 @@ const HarvestHubScreen: React.FC = () => {
     <View style={styles.flex}>
       <SMHeader title="Book a Slot" onBack={() => setScreen(Screen.WarehouseDetail)} />
       <View style={styles.calendarWrap}>
-        <Text style={styles.cardMeta}>Select a date</Text>
+        <View style={styles.calHeader}>
+          <TouchableOpacity onPress={() => navigateMonth('prev')} style={styles.calNavBtn}>
+            <Ionicons name="chevron-back" size={18} color={Colors.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.monthLabel}>{formatMonthYear(currentMonth)}</Text>
+          <TouchableOpacity onPress={() => navigateMonth('next')} style={styles.calNavBtn}>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.primary} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.calendarRow}>
-          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (<Text key={d} style={styles.calendarHead}>{d}</Text>))}
+          {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (<Text key={d} style={styles.calendarHead}>{d}</Text>))}
         </View>
         <View style={styles.calendarGrid}>
-          {[...Array(28)].map((_,i) => (
-            <View key={i} style={[styles.dayCell, (i%7===2) && styles.dayAvailable]}>
-              <Text style={styles.dayText}>{i+1}</Text>
-            </View>
-          ))}
+          {(() => {
+            const { daysInMonth, startingDay } = getDaysInMonth(currentMonth);
+            const nodes: React.ReactNode[] = [];
+            for (let i=0;i<startingDay;i++) nodes.push(<View key={`e-${i}`} style={styles.dayCell} />);
+            for (let day=1; day<=daysInMonth; day++){
+              const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              const disabled = isDateDisabled(date);
+              const unavailable = isDateUnavailable(date);
+              const current = isCurrentDate(date);
+              const selected = isDateSelected(date);
+              const cellStyle = [styles.dayCell,
+                disabled ? styles.dayDisabled : unavailable ? styles.dayUnavailable : selected ? styles.daySelected : current ? styles.dayCurrent : styles.dayDefault
+              ];
+              const textStyle = [styles.dayText,
+                disabled ? styles.dayTextDisabled : unavailable ? styles.dayTextUnavailable : selected ? styles.dayTextSelected : current ? styles.dayTextCurrent : styles.dayTextDefault
+              ];
+              nodes.push(
+                <TouchableOpacity key={`d-${day}`} disabled={disabled || unavailable} onPress={() => handleDatePress(date)} style={cellStyle}>
+                  <Text style={textStyle}>{day}</Text>
+                </TouchableOpacity>
+              );
+            }
+            return nodes;
+          })()}
         </View>
-        <Text style={[styles.cardMeta,{marginTop:12}]}>Available Time Slots</Text>
-        <View style={styles.slotRow}>
-          {['09:00','11:00','13:00','15:00'].map(t => (
-            <View key={t} style={styles.slotChip}><Text style={styles.slotText}>{t}</Text></View>
-          ))}
-        </View>
+        {selectedDates.length>0 && (
+          <Text style={[styles.cardMeta,{marginTop:12}]}>Selected: {formatSelectedDates()}</Text>
+        )}
       </View>
-      <View style={styles.padH}><Button label="Next" onPress={() => setScreen(Screen.BookingForm)} /></View>
+      <View style={styles.padH}>
+        <CustomButton title="Next" onPress={() => setScreen(Screen.BookingForm)} variant="primary" size="large" fullWidth={true} disabled={selectedDates.length===0} />
+      </View>
     </View>
   );
 
@@ -346,14 +453,17 @@ const HarvestHubScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.formPad}>
         <View style={styles.formCard}>
           <Text style={styles.sectionTitle}>Provide Your Details</Text>
+          {selectedDates.length>0 && (
+            <Text style={[styles.cardMeta,{textAlign:'center', marginBottom: 12}]}>Selected: {formatSelectedDates()}</Text>
+          )}
           <TextInput placeholder="Enter Your Name" style={inputStyle} />
           <TextInput placeholder="Enter Your Address" style={inputStyle} />
           <TextInput placeholder="Enter Your Phone Number" style={inputStyle} keyboardType="phone-pad" />
           <View style={{ marginTop: 6 }}>
-            <Button label="Book Time" onPress={() => setScreen(Screen.BookingConfirmation)} />
+            <CustomButton title="Book Time" onPress={() => setScreen(Screen.BookingConfirmation)} variant="primary" size="large" fullWidth={true} />
           </View>
           <View style={{ marginTop: 8 }}>
-            <Button label="Cancel" variant="outline" onPress={() => setScreen(Screen.WarehouseDetail)} />
+            <CustomButton title="Cancel" onPress={() => setScreen(Screen.WarehouseDetail)} variant="secondary" size="large" fullWidth={true} />
           </View>
         </View>
       </ScrollView>
@@ -388,7 +498,7 @@ const HarvestHubScreen: React.FC = () => {
 };
 
 // Soil Management–style header (chevron back, centered title, placeholder right)
-const SMHeader: React.FC<{ title: string; onBack?: () => void }> = ({ title, onBack }) => (
+const SMHeader: React.FC<{ title: string; onBack?: () => void; right?: React.ReactNode }> = ({ title, onBack, right }) => (
   <View style={smHeaderStyles.header}>
     {onBack ? (
       <TouchableOpacity style={smHeaderStyles.backButton} onPress={onBack}>
@@ -400,7 +510,7 @@ const SMHeader: React.FC<{ title: string; onBack?: () => void }> = ({ title, onB
       <View style={smHeaderStyles.placeholder} />
     )}
     <Text style={smHeaderStyles.headerTitle}>{title}</Text>
-    <View style={smHeaderStyles.placeholder} />
+  {right ? right : <View style={smHeaderStyles.placeholder} />}
   </View>
 );
 
@@ -490,12 +600,25 @@ const styles = StyleSheet.create({
 
   // Calendar
   calendarWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  calHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  calNavBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  monthLabel: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
   calendarRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
   calendarHead: { width: 40, textAlign: 'center', fontSize: 12, color: Colors.text.secondary },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
   dayCell: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
   dayAvailable: { backgroundColor: GREEN_LIGHT },
+  dayDefault: { backgroundColor: 'transparent' },
+  dayCurrent: { borderWidth: 2, borderColor: GREEN, backgroundColor: 'transparent' },
+  daySelected: { backgroundColor: GREEN },
+  dayUnavailable: { backgroundColor: '#FEE2E2' },
+  dayDisabled: { backgroundColor: '#F3F4F6' },
   dayText: { fontSize: 12, color: Colors.text.primary },
+  dayTextDefault: { color: Colors.text.primary },
+  dayTextCurrent: { color: Colors.text.primary, fontWeight: '700' },
+  dayTextSelected: { color: Colors.primary.contrastText, fontWeight: '700' },
+  dayTextUnavailable: { color: '#B91C1C' },
+  dayTextDisabled: { color: '#9CA3AF' },
   slotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   slotChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: GREEN_LIGHT },
   slotText: { color: GREEN, fontWeight: '600' },
@@ -540,4 +663,7 @@ const smHeaderStyles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
   placeholder: { width: 40 },
+  miniBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: Colors.primary.main, flexDirection: 'row', alignItems: 'center' },
+  miniBtnText: { color: Colors.primary.contrastText, fontSize: 12, fontWeight: '700' },
+  miniBtnIcon: { marginRight: 6 },
 });
