@@ -1,282 +1,543 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { Button, Card, Chip, ProgressBar, Title } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import { View, Text, StyleSheet, ImageBackground, ScrollView, Image, TouchableOpacity, TextInput, ImageSourcePropType } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Button from '@/components/ui/Button';
+import { images } from '@/constants';
+import { Colors } from '@/constants/Colors';
 
-interface Harvest {
-  id: string;
-  crop: string;
-  field: string;
-  progress: number;
-  status: 'planning' | 'in-progress' | 'completed';
-  startDate: string;
-  estimatedCompletion: string;
-  yield: string;
+// Screens
+enum Screen {
+  Landing,
+  Warehouses,
+  WarehouseDetail,
+  Inventory,
+  MarketPrices,
+  SlotCalendar,
+  BookingForm,
+  BookingConfirmation,
 }
 
-export default function HarvestHubScreen() {
-  const [harvests] = useState<Harvest[]>([
-    {
-      id: '1',
-      crop: 'Corn',
-      field: 'North Field',
-      progress: 75,
-      status: 'in-progress',
-      startDate: 'Oct 15, 2024',
-      estimatedCompletion: 'Oct 25, 2024',
-      yield: '180 tons',
-    },
-    {
-      id: '2',
-      crop: 'Soybeans',
-      field: 'South Field',
-      progress: 100,
-      status: 'completed',
-      startDate: 'Sep 20, 2024',
-      estimatedCompletion: 'Oct 5, 2024',
-      yield: '95 tons',
-    },
-    {
-      id: '3',
-      crop: 'Wheat',
-      field: 'East Field',
-      progress: 0,
-      status: 'planning',
-      startDate: 'Nov 10, 2024',
-      estimatedCompletion: 'Nov 25, 2024',
-      yield: '120 tons',
-    },
-  ]);
+// Data types
+type Category = 'Paddy' | 'Vegetables' | 'Grains';
+type Warehouse = {
+  id: string;
+  name: string;
+  location: string;
+  availability: 'Open' | 'Close';
+  contact: string;
+  photos: ImageSourcePropType[];
+  space: string;
+  temperature: string;
+  humidity: string;
+  security: string;
+  category: Category;
+};
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'planning':
-        return 'bg-blue-100 text-blue-800';
-      case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+type Inventory = {
+  id: string;
+  product: string;
+  quantity: string;
+  storedDate: string;
+  location: string;
+  owner: string;
+  condition: 'Excellent' | 'Good' | 'Fair';
+};
+// type Price removed with Market Prices section
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'planning':
-        return 'schedule';
-      case 'in-progress':
-        return 'trending-up';
-      case 'completed':
-        return 'check-circle';
-      default:
-        return 'help';
-    }
-  };
+// Sample Data (placeholder)
+const CATEGORIES: Category[] = ['Paddy', 'Vegetables', 'Grains'];
+const WAREHOUSES: Warehouse[] = [
+  {
+    id: 'w1',
+    name: 'Mithihalē Warehouse - 01',
+    location: '4th Mile post, Kalutara',
+    availability: 'Open',
+    contact: '071-2345678',
+    photos: [
+      { uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200&auto=format&fit=crop' },
+      { uri: 'https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop' },
+      images.landingPageImage,
+    ],
+    space: 'Available: 0.75t (max 1.0t)',
+    temperature: 'Between 23°C and 25°C (+/- 0.5°C)',
+    humidity: 'High humidity (Stored 60–65%)',
+    security: '24/7 CCTV and guard',
+    category: 'Paddy',
+  },
+  {
+    id: 'w2',
+    name: 'LL Warehouse - 02',
+    location: '2nd Street, Matara',
+    availability: 'Close',
+    contact: '071-9876543',
+    photos: [
+      { uri: 'https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop' },
+      { uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200&auto=format&fit=crop' },
+    ],
+    space: 'Available: 0.25t (max 1.0t)',
+    temperature: '24°C (+/- 1°C)',
+    humidity: 'Low humidity (Stored 40–45%)',
+    security: 'Secure access control',
+    category: 'Vegetables',
+  },
+  {
+    id: 'w3',
+    name: 'Nimthihala Warehouse - 03',
+    location: 'Agri Road, Galle',
+    availability: 'Open',
+    contact: '077-2223344',
+    photos: [
+      { uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200&auto=format&fit=crop' },
+      { uri: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1200&auto=format&fit=crop' },
+    ],
+    space: 'Available: 0.90t (max 1.2t)',
+    temperature: '22–24°C',
+    humidity: 'Moderate (50–55%)',
+    security: 'Perimeter alarms',
+    category: 'Grains',
+  },
+];
 
-  return (
-    <SafeAreaView className="flex-1 bg-blue-50">
-      <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="mb-6 rounded-lg bg-green-700 p-4">
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-2xl font-bold text-white">Harvest Hub</Text>
-              <Text className="mt-1 text-green-200">Manage your harvest operations</Text>
+const INVENTORIES: Inventory[] = [
+  {
+    id: 'i1',
+    product: 'Basmathi Rice',
+    quantity: '2 450 kg',
+    storedDate: '31 July 2025',
+    location: 'Block A, Section 3',
+    owner: 'Sunil Ediriweera, Mahawewa',
+    condition: 'Good',
+  },
+  {
+    id: 'i2',
+    product: 'Keeri Samba Rice',
+    quantity: '5 500 kg',
+    storedDate: '28 July 2025',
+    location: 'Block A, Section 1',
+    owner: 'Kavindi Perera, Dankotuwa',
+    condition: 'Excellent',
+  },
+  {
+    id: 'i3',
+    product: 'Nadu Rice',
+    quantity: '1 250 kg',
+    storedDate: '26 July 2025',
+    location: 'Block B, Section 2',
+    owner: 'Ruwan Fernando, Chilaw',
+    condition: 'Good',
+  },
+];
+
+// Market prices section removed
+type Price = { id: string; product: string; price: string; change: number };
+const MARKET_PRICES: Price[] = [
+  { id: 'p1', product: 'Basmathi Rice', price: 'Rs. 120.00 (per kg)', change: +3.50 },
+  { id: 'p2', product: 'Kiri Samba', price: 'Rs. 121.50 (per kg)', change: +1.50 },
+  { id: 'p3', product: 'Rathu Kakulu', price: 'Rs. 118.00 (per kg)', change: 0.0 },
+  { id: 'p4', product: 'Nadu Rice', price: 'Rs. 127.00 (per kg)', change: -3.00 },
+  { id: 'p5', product: 'Suwandel Rice', price: 'Rs. 260.00 (per kg)', change: -10.50 },
+];
+
+export const options = { tabBarStyle: { display: 'none' } };
+
+const GREEN = Colors.primary.main;
+const GREEN_LIGHT = Colors.primary.light;
+
+const HarvestHubScreen: React.FC = () => {
+  const [screen, setScreen] = React.useState<Screen>(Screen.Landing);
+  const [category, setCategory] = React.useState<Category>('Paddy');
+  const [selectedWarehouse, setSelectedWarehouse] = React.useState<Warehouse | null>(null);
+  const [heroIndex, setHeroIndex] = React.useState<number>(0);
+  const filtered = React.useMemo(() => WAREHOUSES.filter(w => w.category === category), [category]);
+
+  // Reset hero image when selected warehouse changes
+  React.useEffect(() => {
+    setHeroIndex(0);
+  }, [selectedWarehouse?.id]);
+
+  // Render blocks
+  const Landing = (
+    <View style={styles.landingRoot}>
+      <ImageBackground source={images.harvestHubLandingImage} style={styles.bgImage} imageStyle={styles.bgImageInner}>
+        <View style={styles.bgOverlay} />
+        <View style={styles.landingCardOverlay}>
+          <Text style={styles.title}>Store Your Harvest, Secure Your Income</Text>
+          <Text style={styles.subtitle}>
+            Reserve clean, safe, and climate-controlled warehouse space to protect your crops. Enjoy flexible storage duration, easy access, and reliable handling to keep your harvest in top condition until it’s ready to be sent to the market.
+          </Text>
+          <Button label="Visit Warehouse" onPress={() => setScreen(Screen.Warehouses)} />
+        </View>
+      </ImageBackground>
+    </View>
+  );
+
+  const Warehouses = (
+    <View style={styles.flex}>
+      <SMHeader title="Warehouses" onBack={() => setScreen(Screen.Landing)} />
+      <View style={styles.tabRow}>
+        {CATEGORIES.map(cat => (
+          <TouchableOpacity key={cat} style={[styles.tab, category === cat && styles.tabActive]} onPress={() => setCategory(cat)}>
+            <Text numberOfLines={2} style={[styles.tabText, category === cat && styles.tabTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.rowBetween}>
+        <View />
+        <Button label="Market Prices" variant="outline" onPress={() => setScreen(Screen.MarketPrices)} />
+      </View>
+      <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        {filtered.map(item => (
+          <TouchableOpacity key={item.id} style={styles.card} onPress={() => { setSelectedWarehouse(item); setScreen(Screen.WarehouseDetail); }}>
+            <Image source={item.photos[0]} style={styles.thumb} />
+            <View style={styles.cardBody}>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={styles.cardMeta}>{item.location}</Text>
+              <View style={styles.inlineRow}>
+                <Text style={[styles.badge, item.availability === 'Open' ? styles.badgeOpen : styles.badgeClose]}>{item.availability}</Text>
+                <Text style={styles.cardMeta}>Contact: {item.contact}</Text>
+              </View>
             </View>
-            <MaterialIcons name="agriculture" size={40} color="white" />
-          </View>
-        </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 
-        {/* Harvest Overview */}
-        <View className="mb-6 flex-row justify-between">
-          <Card className="mx-1 flex-1 bg-green-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="trending-up" size={24} color="#4CAF50" />
-              <Text className="text-lg font-bold text-green-800">1</Text>
-              <Text className="text-xs text-green-600">In Progress</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-blue-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="schedule" size={24} color="#2196F3" />
-              <Text className="text-lg font-bold text-blue-800">1</Text>
-              <Text className="text-xs text-blue-600">Planned</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-gray-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="check-circle" size={24} color="#666" />
-              <Text className="text-lg font-bold text-gray-800">1</Text>
-              <Text className="text-xs text-gray-600">Completed</Text>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Current Harvest Progress */}
-        <Card className="mb-6 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-green-800">Current Harvest Progress</Title>
-
-            {harvests
-              .filter(h => h.status === 'in-progress')
-              .map(harvest => (
-                <View key={harvest.id} className="mb-4">
-                  <View className="mb-2 flex-row items-center justify-between">
-                    <Text className="text-lg font-semibold text-gray-800">{harvest.crop}</Text>
-                    <Chip className={getStatusColor(harvest.status)}>{harvest.progress}% Complete</Chip>
-                  </View>
-
-                  <Text className="mb-3 text-sm text-gray-600">{harvest.field}</Text>
-
-                  <ProgressBar progress={harvest.progress / 100} color="#4CAF50" className="mb-3" />
-
-                  <View className="flex-row justify-between text-sm">
-                    <Text className="text-gray-600">Started: {harvest.startDate}</Text>
-                    <Text className="text-gray-600">Est. Completion: {harvest.estimatedCompletion}</Text>
-                  </View>
-                </View>
-              ))}
-          </Card.Content>
-        </Card>
-
-        {/* All Harvests */}
-        <View className="mb-6">
-          <View className="mb-4 flex-row items-center justify-between">
-            <Title className="text-lg text-green-800">All Harvests</Title>
-            <Button
-              mode="contained"
-              icon={() => <MaterialIcons name="add" size={20} color="white" />}
-              onPress={() => {}}
-            >
-              Plan Harvest
-            </Button>
-          </View>
-
-          {harvests.map(harvest => (
-            <Card key={harvest.id} className="mb-3 shadow-md">
-              <Card.Content className="p-4">
-                <View className="mb-3 flex-row items-start justify-between">
-                  <View className="flex-1">
-                    <Title className="mb-1 text-lg text-gray-800">{harvest.crop}</Title>
-                    <Text className="text-sm text-gray-600">{harvest.field}</Text>
-                  </View>
-                  <Chip
-                    className={getStatusColor(harvest.status)}
-                    icon={() => (
-                      <MaterialIcons
-                        name={getStatusIcon(harvest.status)}
-                        size={16}
-                        color={
-                          harvest.status === 'planning'
-                            ? '#2196F3'
-                            : harvest.status === 'in-progress'
-                              ? '#FF9800'
-                              : '#4CAF50'
-                        }
-                      />
-                    )}
-                  >
-                    {harvest.status.replace('-', ' ').charAt(0).toUpperCase() +
-                      harvest.status.replace('-', ' ').slice(1)}
-                  </Chip>
-                </View>
-
-                {harvest.status === 'in-progress' && (
-                  <View className="mb-3">
-                    <ProgressBar progress={harvest.progress / 100} color="#4CAF50" className="mb-2" />
-                    <Text className="text-right text-xs text-gray-500">{harvest.progress}% Complete</Text>
-                  </View>
-                )}
-
-                <View className="flex-row items-center justify-between border-t border-gray-100 pt-3">
-                  <View className="flex-row items-center">
-                    <MaterialIcons name="event" size={16} color="#666" />
-                    <Text className="ml-1 text-xs text-gray-600">{harvest.startDate}</Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <MaterialIcons name="scale" size={16} color="#666" />
-                    <Text className="ml-1 text-xs text-gray-600">Est. Yield: {harvest.yield}</Text>
-                  </View>
-                </View>
-
-                <View className="mt-3 flex-row space-x-2">
-                  <Button
-                    mode="outlined"
-                    size="small"
-                    icon={() => <MaterialIcons name="visibility" size={16} color="#055476" />}
-                    onPress={() => {}}
-                  >
-                    View Details
-                  </Button>
-                  {harvest.status === 'planning' && (
-                    <Button
-                      mode="contained"
-                      size="small"
-                      icon={() => <MaterialIcons name="play-arrow" size={16} color="white" />}
-                      onPress={() => {}}
-                    >
-                      Start Harvest
-                    </Button>
-                  )}
-                  {harvest.status === 'in-progress' && (
-                    <Button
-                      mode="contained"
-                      size="small"
-                      icon={() => <MaterialIcons name="update" size={16} color="white" />}
-                      onPress={() => {}}
-                    >
-                      Update Progress
-                    </Button>
-                  )}
-                </View>
-              </Card.Content>
-            </Card>
+  const WarehouseDetail = selectedWarehouse && (
+    <View style={styles.flex}>
+      <SMHeader title="Warehouses" onBack={() => setScreen(Screen.Warehouses)} />
+      <ScrollView contentContainerStyle={styles.detailScroll} showsVerticalScrollIndicator={false}>
+        <Image source={selectedWarehouse.photos[heroIndex]} style={styles.detailHero} />
+        <View style={styles.thumbRow}>
+          {selectedWarehouse.photos.map((ph, idx) => (
+            <TouchableOpacity key={idx} onPress={() => setHeroIndex(idx)} activeOpacity={0.8}>
+              <Image source={ph} style={[styles.smallThumb, idx === heroIndex && styles.smallThumbSelected]} />
+            </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.detailTitle}>{selectedWarehouse.name}</Text>
+        <Text style={styles.detailSub}>{selectedWarehouse.location}</Text>
 
-        {/* Harvest Tips */}
-        <Card className="mb-6 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-green-800">Harvest Tips</Title>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Space</Text><Text style={styles.infoValue}>{selectedWarehouse.space}</Text></View>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Temperature</Text><Text style={styles.infoValue}>{selectedWarehouse.temperature}</Text></View>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Humidity</Text><Text style={styles.infoValue}>{selectedWarehouse.humidity}</Text></View>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Security</Text><Text style={styles.infoValue}>{selectedWarehouse.security}</Text></View>
 
-            <View className="space-y-3">
-              <View className="flex-row items-start">
-                <MaterialIcons name="lightbulb" size={20} color="#FF9800" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Optimal Harvest Time</Text>
-                  <Text className="text-xs text-gray-600">
-                    Harvest when moisture content is 14-15% for best storage quality
-                  </Text>
-                </View>
-              </View>
+        <View style={styles.rowGap}>
+          <Button label="View Inventory" variant="outline" onPress={() => setScreen(Screen.Inventory)} />
+          <Button label="Book Slot" onPress={() => setScreen(Screen.SlotCalendar)} />
+        </View>
+      </ScrollView>
+    </View>
+  );
 
-              <View className="flex-row items-start">
-                <MaterialIcons name="schedule" size={20} color="#2196F3" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Weather Monitoring</Text>
-                  <Text className="text-xs text-gray-600">
-                    Check weather forecasts and avoid harvesting during wet conditions
-                  </Text>
-                </View>
-              </View>
+  const InventoryList = (
+    <View style={styles.flex}>
+      <SMHeader title="Inventories" onBack={() => setScreen(Screen.WarehouseDetail)} />
+      <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <View style={styles.invHeaderBlock}>
+          <Text style={styles.invSectionTitle}>Stored Products</Text>
+          <Text style={styles.invSectionDesc}>
+            Complete list of all products all have stored in this warehouse with quantities, storage dates, and current status.
+          </Text>
+        </View>
 
-              <View className="flex-row items-start">
-                <MaterialIcons name="storage" size={20} color="#4CAF50" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Storage Preparation</Text>
-                  <Text className="text-xs text-gray-600">
-                    Ensure storage facilities are clean and properly ventilated
-                  </Text>
-                </View>
+        {INVENTORIES.map(inv => (
+          <View key={inv.id} style={styles.inventoryCard}>
+            <View style={styles.invCardHead}>
+              <Text style={styles.invTitle}>{inv.product}</Text>
+              <View style={styles.conditionWrap}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={GREEN} />
+                <Text style={styles.conditionText}>{inv.condition} Condition</Text>
               </View>
             </View>
-          </Card.Content>
-        </Card>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Quantity</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.quantity}</Text></View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Location</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.location}</Text></View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Stored Date</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.storedDate}</Text></View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Product Owner</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.owner}</Text></View>
+            </View>
+          </View>
+        ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+
+  const MarketPrices = (
+    <View style={styles.flex}>
+      <SMHeader title="Market Prices" onBack={() => setScreen(Screen.Warehouses)} />
+      <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <View style={styles.invHeaderBlock}>
+          <Text style={styles.invSectionTitle}>Today's Paddy Market Rates</Text>
+          <Text style={styles.invSectionDesc}>
+            Current market prices for all paddy varieties with daily price changes and trend indicators.
+          </Text>
+        </View>
+
+        {MARKET_PRICES.map(mp => {
+          const up = mp.change > 0;
+          const down = mp.change < 0;
+          const deltaColor = up ? styles.deltaUp.color : down ? styles.deltaDown.color : Colors.text.secondary;
+          const arrowName = up ? 'trending-up-outline' : down ? 'trending-down-outline' : 'remove-outline';
+          const deltaText = `${mp.change > 0 ? '+' : ''}${mp.change.toFixed(2)} (Rs.)`;
+          return (
+            <View key={mp.id} style={styles.inventoryCard}>
+              <View style={styles.invCardHead}>
+                <Text style={styles.invTitle}>{mp.product}</Text>
+                <View style={styles.conditionWrap}>
+                  <Ionicons name={arrowName as any} size={16} color={deltaColor} />
+                  <Text style={[styles.delta, up ? styles.deltaUp : down ? styles.deltaDown : styles.deltaNeutral]}>{deltaText}</Text>
+                </View>
+              </View>
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>Current Price</Text>
+                <View style={styles.valueBox}><Text style={styles.valueText}>{mp.price}</Text></View>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
+  const SlotCalendar = (
+    <View style={styles.flex}>
+      <SMHeader title="Book a Slot" onBack={() => setScreen(Screen.WarehouseDetail)} />
+      <View style={styles.calendarWrap}>
+        <Text style={styles.cardMeta}>Select a date</Text>
+        <View style={styles.calendarRow}>
+          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (<Text key={d} style={styles.calendarHead}>{d}</Text>))}
+        </View>
+        <View style={styles.calendarGrid}>
+          {[...Array(28)].map((_,i) => (
+            <View key={i} style={[styles.dayCell, (i%7===2) && styles.dayAvailable]}>
+              <Text style={styles.dayText}>{i+1}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={[styles.cardMeta,{marginTop:12}]}>Available Time Slots</Text>
+        <View style={styles.slotRow}>
+          {['09:00','11:00','13:00','15:00'].map(t => (
+            <View key={t} style={styles.slotChip}><Text style={styles.slotText}>{t}</Text></View>
+          ))}
+        </View>
+      </View>
+      <View style={styles.padH}><Button label="Next" onPress={() => setScreen(Screen.BookingForm)} /></View>
+    </View>
+  );
+
+  const BookingForm = (
+    <View style={styles.flex}>
+      <SMHeader title="Book Storage Slot" onBack={() => setScreen(Screen.SlotCalendar)} />
+      <ScrollView contentContainerStyle={styles.formPad}>
+        <View style={styles.formCard}>
+          <Text style={styles.sectionTitle}>Provide Your Details</Text>
+          <TextInput placeholder="Enter Your Name" style={inputStyle} />
+          <TextInput placeholder="Enter Your Address" style={inputStyle} />
+          <TextInput placeholder="Enter Your Phone Number" style={inputStyle} keyboardType="phone-pad" />
+          <View style={{ marginTop: 6 }}>
+            <Button label="Book Time" onPress={() => setScreen(Screen.BookingConfirmation)} />
+          </View>
+          <View style={{ marginTop: 8 }}>
+            <Button label="Cancel" variant="outline" onPress={() => setScreen(Screen.WarehouseDetail)} />
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+
+  const BookingConfirmation = (
+    <View style={styles.flex}>
+      <SMHeader title="" onBack={() => setScreen(Screen.Warehouses)} />
+      <View style={styles.confirmCard}>
+        <View style={styles.checkCircle}><Text style={styles.checkMark}>✓</Text></View>
+        <Text style={styles.confirmTitle}>Your storage slot is confirmed!</Text>
+        <Text style={styles.confirmMsg}>Your warehouse deposit slot is reserved. Please arrive on time with your items and present the confirmation at the desk for quick processing.</Text>
+        <Button label="Finish" onPress={() => setScreen(Screen.Warehouses)} />
+      </View>
+    </View>
+  );
+
+  let content: React.ReactNode = null;
+  switch (screen) {
+    case Screen.Landing: content = Landing; break;
+    case Screen.Warehouses: content = Warehouses; break;
+    case Screen.WarehouseDetail: content = WarehouseDetail; break;
+    case Screen.Inventory: content = InventoryList; break;
+  case Screen.MarketPrices: content = MarketPrices; break;
+    case Screen.SlotCalendar: content = SlotCalendar; break;
+    case Screen.BookingForm: content = BookingForm; break;
+    case Screen.BookingConfirmation: content = BookingConfirmation; break;
+  }
+
+  return <View style={styles.screenRoot}>{content}</View>;
+};
+
+// Soil Management–style header (chevron back, centered title, placeholder right)
+const SMHeader: React.FC<{ title: string; onBack?: () => void }> = ({ title, onBack }) => (
+  <View style={smHeaderStyles.header}>
+    {onBack ? (
+      <TouchableOpacity style={smHeaderStyles.backButton} onPress={onBack}>
+        <View style={smHeaderStyles.backCircle}>
+          <Ionicons name="chevron-back" size={24} color="#374151" />
+        </View>
+      </TouchableOpacity>
+    ) : (
+      <View style={smHeaderStyles.placeholder} />
+    )}
+    <Text style={smHeaderStyles.headerTitle}>{title}</Text>
+    <View style={smHeaderStyles.placeholder} />
+  </View>
+);
+
+const styles = StyleSheet.create({
+  screenRoot: { flex: 1, backgroundColor: Colors.background.default },
+  flex: { flex: 1, backgroundColor: Colors.background.default, paddingHorizontal: 16, paddingTop: 12 },
+  // Landing
+  landingRoot: { flex: 1 },
+  bgImage: { flex: 1, justifyContent: 'flex-end' },
+  bgImageInner: { resizeMode: 'cover' },
+  bgOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
+  landingCardOverlay: {
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: 24,
+    margin: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  title: { fontSize: 22, fontWeight: '700', color: GREEN, marginBottom: 10, textAlign: 'center' },
+  subtitle: { fontSize: 14, lineHeight: 20, color: Colors.text.secondary, textAlign: 'center', marginBottom: 18 },
+  // headerLink removed; Soil Management header doesn’t use right action here
+
+  // Tabs & list
+  tabRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  tab: { flex: 1, marginHorizontal: 4, backgroundColor: GREEN_LIGHT, paddingHorizontal: 8, paddingVertical: 6, minHeight: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  tabActive: { backgroundColor: GREEN },
+  tabText: { fontSize: 13, fontWeight: '600', color: GREEN, paddingHorizontal: 4, textAlign: 'center', lineHeight: 16 },
+  tabTextActive: { color: Colors.primary.contrastText },
+  listPad: { paddingBottom: 32, paddingHorizontal: 4 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+
+  // Cards
+  card: { flexDirection: 'row', backgroundColor: Colors.background.default, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, alignItems: 'center' },
+  thumb: { width: 70, height: 70, borderRadius: 10, backgroundColor: '#E0E0E0' },
+  cardBody: { flex: 1, marginLeft: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: GREEN },
+  cardMeta: { fontSize: 13, color: Colors.text.secondary },
+  inlineRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 12, overflow: 'hidden', color: Colors.text.primary },
+  badgeOpen: { backgroundColor: GREEN_LIGHT, color: GREEN },
+  badgeClose: { backgroundColor: '#FEE2E2', color: '#B91C1C' },
+
+  // Detail
+  detailScroll: { padding: 16 },
+  detailHero: { width: '100%', height: 200, borderRadius: 16, marginBottom: 10 },
+  thumbRow: { flexDirection: 'row', marginBottom: 10 },
+  smallThumb: { width: 56, height: 56, borderRadius: 8, marginRight: 8, borderWidth: 2, borderColor: 'transparent' },
+  smallThumbSelected: { borderColor: GREEN },
+  detailTitle: { fontSize: 18, fontWeight: '700', color: GREEN, marginTop: 6 },
+  detailSub: { fontSize: 13, color: Colors.text.secondary, marginBottom: 8 },
+  infoStrip: { backgroundColor: GREEN_LIGHT, borderRadius: 12, padding: 12, marginBottom: 10 },
+  infoLabel: { fontSize: 13, fontWeight: '700', color: '#000' },
+  infoValue: { fontSize: 13, color: '#000' },
+  rowGap: { marginTop: 6, gap: 10 },
+
+  // Inventory
+  invHeaderBlock: { paddingHorizontal: 4, marginBottom: 10 },
+  invSectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  invSectionDesc: { fontSize: 12, color: Colors.text.secondary, marginTop: 4 },
+  inventoryCard: {
+    backgroundColor: Colors.background.default,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  invCardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  invTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  conditionWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  conditionText: { fontSize: 12, color: Colors.text.primary },
+  delta: { fontSize: 12, fontWeight: '700' },
+  deltaUp: { color: '#22C55E' },
+  deltaDown: { color: '#EF4444' },
+  deltaNeutral: { color: Colors.text.secondary },
+  fieldBlock: { marginBottom: 10 },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: Colors.text.primary, marginBottom: 6 },
+  valueBox: { backgroundColor: '#E9ECEF', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12 },
+  valueText: { fontSize: 13, color: Colors.text.primary },
+
+  // Market styles removed
+
+  // Calendar
+  calendarWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  calendarRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  calendarHead: { width: 40, textAlign: 'center', fontSize: 12, color: Colors.text.secondary },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+  dayCell: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  dayAvailable: { backgroundColor: GREEN_LIGHT },
+  dayText: { fontSize: 12, color: Colors.text.primary },
+  slotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  slotChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: GREEN_LIGHT },
+  slotText: { color: GREEN, fontWeight: '600' },
+  padH: { paddingHorizontal: 16, paddingBottom: 16 },
+
+  // Form
+  formPad: { padding: 16 },
+  formCard: { backgroundColor: Colors.background.default, borderRadius: 22, padding: 24, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: GREEN, marginBottom: 12, textAlign: 'center' },
+
+  // Confirmation
+  confirmCard: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background.default, padding: 24 },
+  checkCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: GREEN_LIGHT, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  checkMark: { fontSize: 38, fontWeight: '700', color: GREEN },
+  confirmTitle: { fontSize: 20, fontWeight: '700', color: GREEN, marginBottom: 12, textAlign: 'center' },
+  confirmMsg: { fontSize: 14, lineHeight: 20, color: Colors.text.secondary, textAlign: 'center', marginBottom: 24, paddingHorizontal: 6 },
+});
+
+const inputStyle = { marginBottom: 12, borderRadius: 12, borderWidth: 1, borderColor: GREEN_LIGHT, backgroundColor: Colors.background.default, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: Colors.text.primary } as const;
+
+export default HarvestHubScreen;
+
+const smHeaderStyles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginTop: 12,
+    backgroundColor: 'white',
+  // outline removed per design feedback
+  },
+  backButton: { padding: 4, paddingRight: 8 },
+  backCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  placeholder: { width: 40 },
+});
