@@ -3,7 +3,7 @@ import { useAppSelector } from '@/slice/store';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
-import TabBarBackground from '@/components/ui/TabBarBackground';
+import FarmerTabBar from '@/components/navigation/FarmerTabBar';
 
 export default function Layout() {
 	const authSlice = useAppSelector(state => state?.auth);
@@ -12,42 +12,13 @@ export default function Layout() {
 	return (
 		<View className="flex-1 bg-transparent">
 			<Tabs
-				screenOptions={() => ({
+				screenOptions={{
 					headerShown: false,
 					sceneStyle: { backgroundColor: 'transparent' },
 					tabBarActiveTintColor: '#FFFFFF',
 					tabBarInactiveTintColor: 'rgba(255,255,255,0.7)',
-					tabBarStyle: {
-						width: '100%',
-						backgroundColor: 'transparent',
-						borderTopLeftRadius: 32,
-						borderTopRightRadius: 32,
-						paddingBottom: 16,
-						paddingTop: 12,
-						overflow: 'visible',
-						height: 100,
-						justifyContent: 'space-between',
-						alignSelf: 'center',
-						flexDirection: 'row',
-						marginBottom: 0,
-						shadowColor: '#000',
-						shadowOffset: { width: 0, height: -8 },
-						shadowOpacity: 0.15,
-						shadowRadius: 16,
-						elevation: 12,
-						borderTopWidth: 0,
-						paddingHorizontal: 20,
-					},
-					tabBarBackground: () => <TabBarBackground />,
-					tabBarLabelStyle: {
-						fontSize: 11,
-						fontWeight: '600',
-						marginTop: 6,
-						color: 'inherit',
-						letterSpacing: 0.5,
-					},
-					tabBarIconStyle: { marginBottom: 2 },
-				})}
+				}}
+				tabBar={(props) => <FarmerTabBar {...props} />}
 			>
 				{/* HOME TAB - always available to avoid empty Tabs */}
 				<Tabs.Screen
