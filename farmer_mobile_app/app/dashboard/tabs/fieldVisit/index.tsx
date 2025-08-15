@@ -1,7 +1,12 @@
 // Officer Visit Services Flow Implementation
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { images } from '@/constants';
+import { APIService } from '@/utils/apiService';
+import { ServiceBaseUrl } from '@/config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppDispatch } from '@/slice/store';
+import { showSnackbar } from '@/slice/snackbarSlice/snackbarSlice';
 // (Temporarily using local types until extracted to shared location)
 
 // Generic UI components (reusable across app)
@@ -28,178 +33,23 @@ interface Expert {
 }
 const CATEGORIES: CategoryKey[] = ['General Support', 'Pest Control', 'Fertilizer Guidance'];
 
-// Static data (placeholder assets; content intentionally feature-specific here; UI components stay generic)
-const EXPERTS: Expert[] = [
-  {
-    id: 'exp-1',
-  name: 'දිනූෂි පෙරේරා',
-    role: 'General Support Officer',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5678',
-  officeLocation: 'District Office - Galle',
-    rating: 5,
-    description:
-      'Extension officer with 10+ years supporting smallholder farmers in crop planning, soil health, and sustainable practices.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-2',
-  name: 'සවිනී ගුණසේකර',
-    role: 'Pest Management Specialist',
-    category: 'Pest Control',
-    avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
-    phone: '071 234 5679',
-  officeLocation: 'Regional Agricenter - Matara',
-    rating: 4,
-    description:
-      'Specialist in integrated pest management and early detection strategies to reduce losses while protecting the environment.',
-    hours: 'Mon - Fri • 9:00 AM - 4:00 PM',
-  },
-  {
-    id: 'exp-3',
-  name: 'රොහිත ප්‍රනාන්දු',
-    role: 'Fertilizer & Soil Advisor',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5680',
-  officeLocation: 'Soil Lab Hub - Kandy',
-    rating: 5,
-    description:
-      'Guides farmers on balanced fertilizer application, soil testing interpretation, and long‑term soil fertility improvement.',
-    hours: 'Mon - Fri • 8:00 AM - 2:00 PM',
-  },
-  {
-    id: 'exp-4',
-  name: 'මාලිනී ජයසිංහ',
-    role: 'Pest Surveillance Officer',
-    category: 'Pest Control',
-    photo: images.appLogo,
-    phone: '071 234 5681',
-  officeLocation: 'Field Station - Hambantota',
-    rating: 4,
-    description:
-      'Monitors and advises on pest population trends and early warning actions for reduced crop damage.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-5',
-  name: 'ලසන්ත කුමාර',
-    role: 'Soil Sampling Technician',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5682',
-  officeLocation: 'Agri Service Point - Kurunegala',
-    rating: 3,
-    description:
-      'Collects and interprets soil test data to tailor nutrient programs and reduce input wastage.',
-    hours: 'Mon - Fri • 9:00 AM - 4:00 PM',
-  },
-  {
-    id: 'exp-6',
-  name: 'අමිලා දිසානායක',
-    role: 'Crop Rotation Advisor',
-    category: 'General Support',
-    avatarUrl: 'https://randomuser.me/api/portraits/women/65.jpg',
-    phone: '071 234 5683',
-  officeLocation: 'Extension Center - Anuradhapura',
-    rating: 5,
-    description:
-      'Helps design rotation plans improving soil structure, nutrient cycling, and long-term productivity.',
-    hours: 'Mon - Fri • 8:00 AM - 3:00 PM',
-  },
-  {
-    id: 'exp-7',
-  name: 'චාමර වීරසිංහ',
-    role: 'Biological Control Specialist',
-    category: 'Pest Control',
-    photo: images.appLogo,
-    phone: '071 234 5684',
-  officeLocation: 'Pest Monitoring Unit - Badulla',
-    rating: 5,
-    description:
-      'Advises on beneficial insects, microbial pesticides, and ecosystem-friendly suppression strategies.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-8',
-  name: 'ප්‍රියංකරී විජේසිංහ',
-    role: 'Nutrient Management Consultant',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5685',
-  officeLocation: 'Nutrient Advisory Desk - Polonnaruwa',
-    rating: 4,
-    description:
-      'Optimizes fertilizer scheduling and blending to match crop stages while minimizing leaching.',
-    hours: 'Mon - Fri • 9:00 AM - 4:30 PM',
-  },
-  {
-    id: 'exp-9',
-  name: 'සමන් මෙන්ඩිස්',
-    role: 'Farm Risk Assessor',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5686',
-  officeLocation: 'Risk Advisory Cell - Jaffna',
-    rating: 4,
-    description:
-      'Evaluates weather, pest, and market risks to guide contingency and resilience planning.',
-    hours: 'Mon - Fri • 8:00 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-10',
-  name: 'ඇලීනා පෙරේරා',
-    role: 'Post-Harvest Handling Expert',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5687',
-  officeLocation: 'Post-Harvest Center - Colombo',
-    rating: 5,
-    description:
-      'Supports improved storage, grading, and transport practices to reduce post-harvest losses.',
-    hours: 'Mon - Fri • 8:30 AM - 3:00 PM',
-  },
-  {
-    id: 'exp-11',
-  name: 'ඉබ්‍රාහිම් කාරිම්',
-    role: 'Weed Management Specialist',
-    category: 'Pest Control',
-    photo: images.appLogo,
-    phone: '071 234 5688',
-  officeLocation: 'Weed Control Section - Ratnapura',
-    rating: 3,
-    description:
-      'Designs integrated weed control programs balancing mechanical, cultural, and chemical tactics.',
-    hours: 'Mon - Fri • 9:00 AM - 4:00 PM',
-  },
-  {
-    id: 'exp-12',
-  name: 'ෆාතිමා නූර්',
-    role: 'Sustainable Inputs Advisor',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5689',
-  officeLocation: 'Sustainable Inputs Hub - Monaragala',
-    rating: 5,
-    description:
-      'Guides adoption of biofertilizers and organic amendments to build long-term soil vitality.',
-    hours: 'Mon - Fri • 8:00 AM - 2:30 PM',
-  },
-  {
-    id: 'exp-13',
-  name: 'ජයන්ත රණසිංහ',
-    role: 'Irrigation & Water Use Officer',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5690',
-  officeLocation: 'Water Management Office - Trincomalee',
-    rating: 4,
-    description:
-      'Advises on efficient irrigation scheduling, water conservation, and system maintenance.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-];
+// Backend officer types
+type Officer = {
+  id: number;
+  name: string;
+  designation: string;
+  specialization: 'general_support' | 'pest_control' | 'fertilizer_guidance';
+  center: string;
+  phone_no: string;
+  description?: string;
+};
+
+// Map UI category to backend specialization
+const CATEGORY_TO_SPEC: Record<CategoryKey, Officer['specialization']> = {
+  'General Support': 'general_support',
+  'Pest Control': 'pest_control',
+  'Fertilizer Guidance': 'fertilizer_guidance',
+};
 
 // Screen State Enum
 enum Screen {
@@ -218,6 +68,7 @@ export const options = {
 };
 
 const FieldVisitScreen: React.FC = () => {
+  const dispatch = useAppDispatch();
   // Navigation stack to emulate auth (expo-router) push/pop slide transitions
   const [stack, setStack] = useState<Screen[]>([Screen.Landing]);
   const screen = stack[stack.length - 1];
@@ -236,7 +87,39 @@ const FieldVisitScreen: React.FC = () => {
   const incomingOpacity = React.useRef(new Animated.Value(1)).current;
   const outgoingOpacity = React.useRef(new Animated.Value(0)).current;
 
-  const filteredExperts = useMemo(() => EXPERTS.filter(e => e.category === category), [category]);
+  // Data state from backend
+  const [officers, setOfficers] = useState<Officer[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const fetchOfficers = async (reset = false) => {
+    try {
+      setLoading(true);
+      const spec = CATEGORY_TO_SPEC[category];
+      const params = { page: reset ? 1 : page, limit: 10, specialization: spec } as any;
+      const url = `${ServiceBaseUrl}/api/v1/field-officers`;
+      const res = await APIService.getInstance().get(url, { params });
+      const payload = res.data?.data;
+      const list: Officer[] = payload?.data || [];
+      const pg = payload?.pagination;
+      setOfficers(prev => (reset ? list : [...prev, ...list]));
+      setTotalPages(pg?.totalPages || 1);
+      if (reset) setPage(1);
+    } catch (e: any) {
+      dispatch(showSnackbar({ message: 'Failed to load officers', type: 'error' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // refetch on category change or when entering the list screen
+  React.useEffect(() => {
+    if (screen === Screen.ExpertsTabbed) {
+      fetchOfficers(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, screen]);
 
   // Navigation helpers mimicking push/pop
   const push = (next: Screen) => {
@@ -319,31 +202,70 @@ const FieldVisitScreen: React.FC = () => {
             })}
           </View>
           <FlatList
-            data={filteredExperts}
-            keyExtractor={it => it.id}
+            data={officers}
+            keyExtractor={it => String(it.id)}
             contentContainerStyle={styles.listPad}
             renderItem={({ item }) => (
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.expertCard}
-                onPress={() => { setSelected(item); push(Screen.Profile); }}
+                onPress={async () => {
+                  // Fetch details by id for description
+                  try {
+                    const res = await APIService.getInstance().get(`${ServiceBaseUrl}/api/v1/field-officers/${item.id}`);
+                    const data: Officer = res.data?.data || item;
+                    const mapped: Expert = {
+                      id: String(data.id),
+                      name: data.name,
+                      role: data.designation,
+                      category,
+                      phone: data.phone_no,
+                      officeLocation: data.center,
+                      rating: 4,
+                      description: data.description || '',
+                      hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
+                    };
+                    setSelected(mapped);
+                  } catch {
+                    const fallback: Expert = {
+                      id: String(item.id),
+                      name: item.name,
+                      role: item.designation,
+                      category,
+                      phone: item.phone_no,
+                      officeLocation: item.center,
+                      rating: 4,
+                      description: '',
+                      hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
+                    };
+                    setSelected(fallback);
+                  }
+                  push(Screen.Profile);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`View profile of ${item.name}`}
               >
-                <Image source={item.avatarUrl ? { uri: item.avatarUrl } : (item.photo || images.appLogo)} style={styles.expertAvatar} />
+                <Image source={images.appLogo} style={styles.expertAvatar} />
                 <View style={styles.expertBody}>
                   <Text style={styles.expertName}>{item.name}</Text>
-                  <Text style={styles.expertRole}>{item.role}</Text>
+                  <Text style={styles.expertRole}>{item.designation}</Text>
                   <View style={styles.inlineRow}>
                     <View style={styles.phoneRow}>
                       <Text style={styles.iconText}>📞</Text>
-                      <Text style={styles.metaText}>{item.phone}</Text>
+                      <Text style={styles.metaText}>{item.phone_no}</Text>
                     </View>
-                    <StarRating value={item.rating} />
+                    <StarRating value={4} />
                   </View>
                 </View>
               </TouchableOpacity>
             )}
+            ListFooterComponent={loading ? <ActivityIndicator style={{ padding: 12 }} /> : null}
+            onEndReachedThreshold={0.5}
+            onEndReached={() => {
+              if (!loading && page < totalPages) {
+                setPage(p => p + 1);
+              }
+            }}
           />
         </View>
       );
@@ -377,7 +299,30 @@ const FieldVisitScreen: React.FC = () => {
       content = (
         <View style={styles.flex}>
           <Header title="Contact" onBack={() => pop()} />
-          <ContactFormInline onSubmit={() => push(Screen.Confirmation)} />
+          <ContactFormInline
+            onSubmit={async (payload) => {
+              try {
+                const token = await AsyncStorage.getItem('token');
+                if (!selected) throw new Error('No officer selected');
+                const urgency = payload.urgency === 'emergency' ? 'high' : payload.urgency === 'standard' ? 'medium' : 'low';
+                const body = {
+                  field_officer_id: Number(selected.id),
+                  farmer_name: payload.name,
+                  farmer_mobile: payload.mobile,
+                  farmer_address: payload.address,
+                  current_issues: payload.issues.join(', '),
+                  urgency_level: urgency,
+                };
+                await APIService.getInstance().post(`${ServiceBaseUrl}/api/v1/field-officers/contact-requests`, body, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                });
+                dispatch(showSnackbar({ message: 'Request submitted', type: 'success' }));
+                push(Screen.Confirmation);
+              } catch (e: any) {
+                dispatch(showSnackbar({ message: 'Failed to submit request', type: 'error' }));
+              }
+            }}
+          />
         </View>
       );
       break;
@@ -598,7 +543,8 @@ const URGENCY_OPTIONS = [
   { value: 'planning', label: 'Planning (Future guidance)' },
 ];
 
-const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
+type ContactPayload = { name: string; mobile: string; address: string; issues: string[]; urgency: string };
+const ContactFormInline: React.FC<{ onSubmit: (payload: ContactPayload) => void }> = ({ onSubmit }) => {
   const [name, setName] = React.useState('');
   const [mobile, setMobile] = React.useState('');
   const [address, setAddress] = React.useState('');
@@ -636,7 +582,11 @@ const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => 
             style={styles.choiceRow}
           />
         ))}
-        <Button label="Submit" disabled={!canSubmit} onPress={onSubmit} />
+        <Button
+          label="Submit"
+          disabled={!canSubmit}
+          onPress={() => onSubmit({ name, mobile, address, issues, urgency })}
+        />
       </View>
     </ScrollView>
   );
