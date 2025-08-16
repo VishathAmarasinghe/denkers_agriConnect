@@ -1,3 +1,4 @@
+
 // Safe dynamic import to work in Expo Go where the native module may be unavailable
 let RN_Snackbar: any = null;
 try {
@@ -22,4 +23,4 @@ const show = (message: string, bg: string) => {
 };
 
 export const showSuccessSnackbar = (message: string) => show(message, '#4CAF50');
-export const showErrorSnackbar = (message: string) => show(message, '#F44336');
+

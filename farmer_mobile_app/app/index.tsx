@@ -17,7 +17,7 @@ const HomeScreen = () => {
   const auth = useAppSelector(state => state?.auth);
 
 
-  APIService.initialize(ServiceBaseUrl);
+  APIService.initialize(AppConfig.serviceUrls.authentication);
 
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const HomeScreen = () => {
 
   return (
     <Provider store={store}>
-      {token ? (
+  {token ? (
         auth?.status === State.success ? (
           <Redirect href="/dashboard/tabs/home" />
         ) : (
