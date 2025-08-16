@@ -1,112 +1,333 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import { ScrollView, Text, View } from 'react-native';
-import { Button, Card, Paragraph, Title } from 'react-native-paper';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ImageBackground, Pressable, ScrollView, Text, View, Dimensions, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { selectUserProfile } from '@/slice/authSlice/Auth';
+import { useWeather } from '@/hooks/useWeather';
+import weatherService from '@/utils/weatherService';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const userProfile = useSelector(selectUserProfile);
+  const { height: screenHeight } = Dimensions.get('window');
+  const contentBottomPadding = 140; // ensure visible above custom tab bar (100px + extra space)
+  
+  const { weatherData, locationData, loading, error, refreshWeather } = useWeather();
+
+  const getUserGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const getUserName = () => {
+    if (userProfile) {
+      return userProfile.first_name || userProfile.username || 'Farmer';
+    }
+    return 'Farmer';
+  };
+
+  const getLocationDisplayName = () => {
+    if (locationData?.cityName) {
+      return locationData.cityName;
+    }
+    return 'Current Location';
+  };
+
+  const getWeatherIcon = () => {
+    if (weatherData?.icon) {
+      return weatherService.getWeatherIcon(weatherData.icon);
+    }
+    return 'weather-partly-cloudy';
+  };
+
+  const getCurrentTime = () => {
+    return weatherService.formatTime();
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-blue-50">
-      <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="mb-6 items-center py-5">
-          <MaterialIcons name="agriculture" size={32} color="#055476" />
-          <Text className="mt-2 text-3xl font-bold text-blue-800">AgriConnect</Text>
-          <Text className="mt-1 text-base text-gray-600">Smart Farming Dashboard</Text>
-        </View>
+    <SafeAreaView className="flex-1 bg-transparent">
+      <ImageBackground
+        source={require('@/assets/images/dashboard.png')}
+        resizeMode="cover"
+        style={{ flex: 1 }}
+      >
+        <View className="flex-1 bg-black/10">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: contentBottomPadding }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={refreshWeather}
+                tintColor="#FFFFFF"
+                colors={["#FFFFFF"]}
+              />
+            }
+          >
+            {/* Location pill and settings button */}
+            <View className="mt-4 flex-row items-center justify-between">
+              <View className="flex-1 flex-row items-center rounded-3xl bg-gray-800/60 px-4 py-3" style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+                <MaterialIcons name="location-on" size={18} color="#FFFFFF" />
+                <Text className="ml-2 text-sm font-semibold text-white">
+                  {loading ? 'Getting location...' : getLocationDisplayName()}
+                </Text>
+              </View>
+              <View className="ml-3">
+                {/* Settings Button */}
+                <Pressable
+                  onPress={() => router.push('/dashboard/settings')}
+                  className="h-10 w-10 rounded-full bg-gray-300 overflow-hidden"
+                >
+                  <View className="h-full w-full bg-gray-400 items-center justify-center">
+                    <MaterialIcons name="settings" size={24} color="#666" />
+                  </View>
+                </Pressable>
+              </View>
+            </View>
 
-        {/* Quick Stats */}
-        <View className="mb-5 flex-row justify-between">
-          <Card className="mx-1 flex-1 shadow-md">
-            <Card.Content>
-              <View className="flex-row items-center">
-                <MaterialIcons name="trending-up" size={24} color="#4CAF50" />
-                <View className="ml-3">
-                  <Title className="mb-0 text-xl text-blue-800">85%</Title>
-                  <Paragraph className="mb-0 text-xs text-gray-600">Crop Health</Paragraph>
+            {/* Greetings + weather */}
+            <View className="mt-32">
+              <Text className="text-2xl font-bold text-white">
+                Hi, {getUserGreeting()} {getUserName()}!
+              </Text>
+              <View className="mt-4 flex-row items-start justify-between">
+                <Text className="text-6xl leading-none font-bold text-white">
+                  {loading ? '--°C' : `${weatherData?.temperature || '--'}°C`}
+                </Text>
+                <View className="items-end pt-1">
+                  <View className="flex-row items-center">
+                    <MaterialCommunityIcons 
+                      name={getWeatherIcon() as any} 
+                      size={24} 
+                      color="#FFFFFF" 
+                    />
+                    <Text className="ml-2 text-lg font-semibold text-white">
+                      {loading ? 'Loading...' : weatherData?.description || 'Weather'}
+                    </Text>
+                  </View>
+                  <Text className="mt-1 text-sm font-medium text-white">
+                    {getCurrentTime()}
+                  </Text>
                 </View>
               </View>
-            </Card.Content>
-          </Card>
 
-          <Card className="mx-1 flex-1 shadow-md">
-            <Card.Content>
-              <View className="flex-row items-center">
-                <MaterialIcons name="water-drop" size={24} color="#2196F3" />
-                <View className="ml-3">
-                  <Title className="mb-0 text-xl text-blue-800">72%</Title>
-                  <Paragraph className="mb-0 text-xs text-gray-600">Soil Moisture</Paragraph>
+              {/* Weather badges */}
+              <View className="mt-4 flex-row">
+                <View className="mr-3 flex-row items-center rounded-2xl bg-gray-700/60 px-3 py-2" style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+                  <MaterialCommunityIcons name="weather-windy" size={16} color="#FFFFFF" />
+                  <Text className="ml-2 text-xs font-medium text-white">
+                    {loading ? '--km/h' : `${weatherData?.windSpeed || '--'}km/h`}
+                  </Text>
+                </View>
+                <View className="flex-row items-center rounded-2xl bg-gray-700/60 px-3 py-2" style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+                  <MaterialCommunityIcons name="water-percent" size={16} color="#FFFFFF" />
+                  <Text className="ml-2 text-xs font-medium text-white">
+                    {loading ? '--%' : `${weatherData?.humidity || '--'}%`}
+                  </Text>
                 </View>
               </View>
-            </Card.Content>
-          </Card>
-        </View>
 
-        {/* Recent Activities */}
-        <Card className="mb-5 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-blue-800">Recent Activities</Title>
-
-            <View className="flex-row items-center border-b border-blue-100 py-3">
-              <MaterialIcons name="schedule" size={20} color="#055476" />
-              <Text className="ml-3 flex-1 text-sm text-gray-800">Field inspection completed - North Field</Text>
-              <Text className="ml-2 text-xs text-gray-500">2 hours ago</Text>
+              {/* Error message */}
+              {error && (
+                <View className="mt-4 rounded-lg bg-red-500/20 p-3 border border-red-500/30">
+                  <Text className="text-sm text-red-200 text-center">{error}</Text>
+                  <Pressable 
+                    onPress={refreshWeather}
+                    className="mt-2 bg-red-500/30 rounded-lg py-2 px-4 self-center"
+                  >
+                    <Text className="text-red-200 text-sm font-medium">Retry</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
 
-            <View className="flex-row items-center border-b border-blue-100 py-3">
-              <MaterialIcons name="notifications" size={20} color="#FF9800" />
-              <Text className="ml-3 flex-1 text-sm text-gray-800">Irrigation system maintenance due</Text>
-              <Text className="ml-2 text-xs text-gray-500">5 hours ago</Text>
-            </View>
+            {/* Action tiles grid */}
+            <View className="mt-16">
+              <View className="flex-row">
+                <View className="mr-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/soilManagement')}
+                    className="items-center justify-center rounded-2xl"
+                    style={{ 
+                      height: 110, 
+                      backgroundColor: 'rgba(255,255,255,0.85)', 
+                      borderWidth: 1, 
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3
+                    }}
+                  >
+                    <MaterialCommunityIcons name="flask-outline" size={32} color="#333" style={{ marginBottom: 8 }} />
+                    <Text className="text-sm font-semibold text-gray-800">Soil Testing</Text>
+                  </Pressable>
+                </View>
+                <View className="ml-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/fieldVisit')}
+                    className="items-center justify-center rounded-2xl"
+                    style={{ 
+                      height: 110, 
+                      backgroundColor: 'rgba(255,255,255,0.85)', 
+                      borderWidth: 1, 
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3
+                    }}
+                  >
+                    <MaterialCommunityIcons name="account-group-outline" size={32} color="#333" style={{ marginBottom: 8 }} />
+                    <Text className="text-sm font-semibold text-gray-800">Officer Visit</Text>
+                  </Pressable>
+                </View>
+              </View>
 
-            <View className="flex-row items-center py-3">
-              <MaterialIcons name="check-circle" size={20} color="#4CAF50" />
-              <Text className="ml-3 flex-1 text-sm text-gray-800">Harvest planning scheduled</Text>
-              <Text className="ml-2 text-xs text-gray-500">1 day ago</Text>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="mb-5 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-blue-800">Quick Actions</Title>
-
-            <View className="space-y-3">
-              <Button
-                mode="contained"
-                className="mb-2"
-                icon={() => <MaterialIcons name="add" size={20} color="white" />}
-                onPress={() => {}}
-              >
-                New Field Visit
-              </Button>
-
-              <Button
-                mode="outlined"
-                className="mb-2"
-                icon={() => <MaterialIcons name="chat" size={20} color="#055476" />}
-                onPress={() => {}}
-              >
-                Chat with AI
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Weather Info */}
-        <Card className="mb-5 shadow-md">
-          <Card.Content>
-            <View className="flex-row items-center">
-              <MaterialIcons name="wb-sunny" size={32} color="#FF9800" />
-              <View className="ml-4">
-                <Title className="mb-0 text-2xl text-blue-800">24°C</Title>
-                <Paragraph className="mb-1 text-base text-gray-600">Partly Cloudy</Paragraph>
-                <Text className="text-xs text-gray-500">North Field, Farm Zone</Text>
+              <View className="mt-4 flex-row">
+                <View className="mr-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/machineRent')}
+                    className="items-center justify-center rounded-2xl"
+                    style={{ 
+                      height: 110, 
+                      backgroundColor: 'rgba(255,255,255,0.85)', 
+                      borderWidth: 1, 
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3
+                    }}
+                  >
+                    <MaterialCommunityIcons name="tractor-variant" size={32} color="#333" style={{ marginBottom: 8 }} />
+                    <Text className="text-sm font-semibold text-gray-800">Rent Machine</Text>
+                  </Pressable>
+                </View>
+                <View className="ml-3 flex-1">
+                  <Pressable
+                    onPress={() => router.push('/dashboard/tabs/harvestHub')}
+                    className="items-center justify-center rounded-2xl"
+                    style={{ 
+                      height: 110, 
+                      backgroundColor: 'rgba(255,255,255,0.85)', 
+                      borderWidth: 1, 
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3
+                    }}
+                  >
+                    <MaterialCommunityIcons name="barn" size={32} color="#333" style={{ marginBottom: 8 }} />
+                    <Text className="text-sm font-semibold text-gray-800">Harvest Hub</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
-          </Card.Content>
-        </Card>
-      </ScrollView>
+
+            {/* Recent Activities - white sheet with rounded top */}
+            <View className="mt-8 relative">
+              <View className="rounded-t-3xl bg-white px-4 pt-8 pb-4" style={{
+                marginLeft: -16,
+                marginRight: -16,
+                left: 0,
+                right: 0
+              }}>
+                <Text className="mb-4 text-xl font-bold text-gray-900" style={{ textDecorationLine: 'underline' }}>Recent Activities</Text>
+
+                {/* Activity Cards */}
+                <View className="mb-4 bg-white rounded-lg p-4" style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Text className="text-base font-bold text-gray-900 mb-2">Soil Test Report Ready</Text>
+                  <Text className="text-sm text-gray-700 mb-3">Your soil analysis for North Field is complete</Text>
+                  <Pressable className="bg-[#52B788] rounded-lg py-2 px-4 self-center mb-2">
+                    <Text className="text-white font-semibold text-center">View Full Report</Text>
+                  </Pressable>
+                  <Text className="text-xs text-gray-500 text-right">2 hours ago</Text>
+                </View>
+
+                <View className="mb-4 bg-white rounded-lg p-4" style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Text className="text-base font-bold text-gray-900 mb-2">Officer Visit Confirmed</Text>
+                  <Text className="text-sm text-gray-700 mb-3">Mr. Saman Perera will visit tomorrow at 10.00 AM</Text>
+                  <Text className="text-xs text-gray-500 text-right">5 hours ago</Text>
+                </View>
+
+                <View className="mb-4 bg-white rounded-lg p-4" style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Text className="text-base font-bold text-gray-900 mb-2">Tractor Rental Approved</Text>
+                  <Text className="text-sm text-gray-700 mb-3">Mahindra 575 DI booking confirmed for August 15.</Text>
+                  <Text className="text-xs text-gray-500 text-right">2 days ago</Text>
+                </View>
+
+                <View className="mb-4 bg-white rounded-lg p-4" style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Text className="text-base font-bold text-gray-900 mb-2">Storage Slot Reserved</Text>
+                  <Text className="text-sm text-gray-700 mb-3">Deposit slot booked for August 12, at 2:00 PM</Text>
+                  <Text className="text-xs text-gray-500 text-right">2 days ago</Text>
+                </View>
+
+                <View className="mb-4 bg-white rounded-lg p-4" style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Text className="text-base font-bold text-gray-900 mb-2">Soil Sample Collected</Text>
+                  <Text className="text-sm text-gray-700 mb-3">Taking soil sample from North Field for analysis</Text>
+                  <Text className="text-xs text-gray-500 text-right">3 days ago</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Floating Action Button for Chat Agent - Fixed Position */}
+          <Pressable
+            onPress={() => router.push('/dashboard/chatAgent')}
+            className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full bg-[#52B788] shadow-2xl"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 8
+            }}
+          >
+            <MaterialCommunityIcons name="headset" size={28} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
+

@@ -1,282 +1,1124 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { Button, Card, Chip, ProgressBar, Title } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import { View, Text, StyleSheet, ImageBackground, ScrollView, Image, TouchableOpacity, TextInput, ImageSourcePropType, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator } from 'react-native';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import CustomButton from '@/components/CustomButton';
+import { images } from '@/constants';
+import { Colors } from '@/constants/Colors';
+import { fetchWarehouses, fetchWarehouseById, fetchMarketPrices, createStorageRequest } from '@/utils/harvestHubApi';
+import { showErrorSnackbar, showSuccessSnackbar } from '@/utils/SnackbarUtils';
 
-interface Harvest {
-  id: string;
-  crop: string;
-  field: string;
-  progress: number;
-  status: 'planning' | 'in-progress' | 'completed';
-  startDate: string;
-  estimatedCompletion: string;
-  yield: string;
+// Screens
+enum Screen {
+  Landing,
+  Warehouses,
+  WarehouseDetail,
+  Inventory,
+  MarketPrices,
+  SlotCalendar,
+  BookingForm,
+  BookingConfirmation,
 }
 
-export default function HarvestHubScreen() {
-  const [harvests] = useState<Harvest[]>([
-    {
-      id: '1',
-      crop: 'Corn',
-      field: 'North Field',
-      progress: 75,
-      status: 'in-progress',
-      startDate: 'Oct 15, 2024',
-      estimatedCompletion: 'Oct 25, 2024',
-      yield: '180 tons',
-    },
-    {
-      id: '2',
-      crop: 'Soybeans',
-      field: 'South Field',
-      progress: 100,
-      status: 'completed',
-      startDate: 'Sep 20, 2024',
-      estimatedCompletion: 'Oct 5, 2024',
-      yield: '95 tons',
-    },
-    {
-      id: '3',
-      crop: 'Wheat',
-      field: 'East Field',
-      progress: 0,
-      status: 'planning',
-      startDate: 'Nov 10, 2024',
-      estimatedCompletion: 'Nov 25, 2024',
-      yield: '120 tons',
-    },
-  ]);
+// Data types
+type Category = 'Paddy' | 'Vegetables' | 'Grains';
+type Warehouse = {
+  id: string;
+  name: string;
+  location: string;
+  availability: 'Open' | 'Close';
+  contact: string;
+  photos: ImageSourcePropType[];
+  space: string;
+  temperature: string;
+  humidity: string;
+  security: string;
+  category: Category;
+};
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'planning':
-        return 'bg-blue-100 text-blue-800';
-      case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+type Inventory = {
+  id: string;
+  product: string;
+  quantity: string;
+  storedDate: string;
+  location: string;
+  owner: string;
+  condition: 'Excellent' | 'Good' | 'Fair';
+};
+// type Price removed with Market Prices section
+type TimeSlot = { id: string; label: string; available: boolean };
+
+// Sample Data (placeholder)
+const CATEGORIES: Category[] = ['Paddy', 'Vegetables', 'Grains'];
+const WAREHOUSES: Warehouse[] = [
+  {
+    id: 'w1',
+    name: 'Mithihalē Warehouse - 01',
+    location: '4th Mile post, Kalutara',
+    availability: 'Open',
+    contact: '071-2345678',
+    photos: [
+      { uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200&auto=format&fit=crop' },
+      { uri: 'https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop' },
+      images.landingPageImage,
+    ],
+    space: 'Available: 0.75t (max 1.0t)',
+    temperature: 'Between 23°C and 25°C (+/- 0.5°C)',
+    humidity: 'High humidity (Stored 60–65%)',
+    security: '24/7 CCTV and guard',
+    category: 'Paddy',
+  },
+  {
+    id: 'w2',
+    name: 'LL Warehouse - 02',
+    location: '2nd Street, Matara',
+    availability: 'Close',
+    contact: '071-9876543',
+    photos: [
+      { uri: 'https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop' },
+      { uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200&auto=format&fit=crop' },
+    ],
+    space: 'Available: 0.25t (max 1.0t)',
+    temperature: '24°C (+/- 1°C)',
+    humidity: 'Low humidity (Stored 40–45%)',
+    security: 'Secure access control',
+    category: 'Vegetables',
+  },
+  {
+    id: 'w3',
+    name: 'Nimthihala Warehouse - 03',
+    location: 'Agri Road, Galle',
+    availability: 'Open',
+    contact: '077-2223344',
+    photos: [
+      { uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200&auto=format&fit=crop' },
+      { uri: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1200&auto=format&fit=crop' },
+    ],
+    space: 'Available: 0.90t (max 1.2t)',
+    temperature: '22–24°C',
+    humidity: 'Moderate (50–55%)',
+    security: 'Perimeter alarms',
+    category: 'Grains',
+  },
+];
+
+const INVENTORIES: Inventory[] = [
+  {
+    id: 'i1',
+    product: 'Basmathi Rice',
+    quantity: '2 450 kg',
+    storedDate: '31 July 2025',
+    location: 'Block A, Section 3',
+    owner: 'Sunil Ediriweera, Mahawewa',
+    condition: 'Good',
+  },
+  {
+    id: 'i2',
+    product: 'Keeri Samba Rice',
+    quantity: '5 500 kg',
+    storedDate: '28 July 2025',
+    location: 'Block A, Section 1',
+    owner: 'Kavindi Perera, Dankotuwa',
+    condition: 'Excellent',
+  },
+  {
+    id: 'i3',
+    product: 'Nadu Rice',
+    quantity: '1 250 kg',
+    storedDate: '26 July 2025',
+    location: 'Block B, Section 2',
+    owner: 'Ruwan Fernando, Chilaw',
+    condition: 'Good',
+  },
+];
+
+// Market Prices dataset and types
+type Price = { id: string; product: string; price: string; change: number };
+const MARKET_PRICES: Price[] = [
+  { id: 'p1', product: 'Basmathi Rice', price: 'Rs. 120.00 (per kg)', change: +3.50 },
+  { id: 'p2', product: 'Kiri Samba', price: 'Rs. 121.50 (per kg)', change: +1.50 },
+  { id: 'p3', product: 'Rathu Kakulu', price: 'Rs. 118.00 (per kg)', change: 0.0 },
+  { id: 'p4', product: 'Nadu Rice', price: 'Rs. 127.00 (per kg)', change: -3.00 },
+  { id: 'p5', product: 'Suwandel Rice', price: 'Rs. 260.00 (per kg)', change: -10.50 },
+];
+
+// Base definitions for time slots (Morning session)
+const BASE_MORNING_TIMES: string[] = [
+  '8:00 AM - 9:00 AM',
+  '9:00 AM - 10:00 AM',
+  '10:00 AM - 11:00 AM',
+];
+
+export const options = { tabBarStyle: { display: 'none' } };
+
+const GREEN = Colors.primary.main;
+const GREEN_LIGHT = Colors.primary.light;
+
+const HarvestHubScreen: React.FC = () => {
+  const [screen, setScreen] = React.useState<Screen>(Screen.Landing);
+  const [category, setCategory] = React.useState<Category>('Paddy');
+  const [selectedWarehouse, setSelectedWarehouse] = React.useState<Warehouse | null>(null);
+  const [warehouses, setWarehouses] = React.useState<Warehouse[]>([]);
+  const [isWarehousesLoading, setIsWarehousesLoading] = React.useState(false);
+  const [warehousesError, setWarehousesError] = React.useState<string | null>(null);
+  const [warehouseRetryCount, setWarehouseRetryCount] = React.useState(0);
+  const didWarehousesLoadRef = React.useRef(false);
+  const [heroIndex, setHeroIndex] = React.useState<number>(0);
+  const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
+  const [currentMonth, setCurrentMonth] = React.useState<Date>(new Date());
+  const [showDetailsForm, setShowDetailsForm] = React.useState(false);
+  const [showConfirmation, setShowConfirmation] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [formData, setFormData] = React.useState({ name: '', location: '', contactNumber: '' });
+  const [selectedTimeSlot, setSelectedTimeSlot] = React.useState<string | null>(null);
+  const [marketPrices, setMarketPrices] = React.useState<Price[] | null>(null);
+  const [isPricesLoading, setIsPricesLoading] = React.useState(false);
+  const [pricesFailed, setPricesFailed] = React.useState(false);
+  // Validation state for details form
+  const [touched, setTouched] = React.useState<{ name: boolean; location: boolean; contactNumber: boolean }>({ name: false, location: false, contactNumber: false });
+  const [errors, setErrors] = React.useState<{ name?: string; location?: string; contactNumber?: string }>({});
+  const validateName = (v: string) => {
+    const value = v.trim();
+    if (!value) return 'Name is required';
+    if (value.length < 2) return 'Name must be at least 2 characters';
+    return '';
+  };
+  const validateLocation = (v: string) => {
+    const value = v.trim();
+    if (!value) return 'Location is required';
+    if (value.length < 3) return 'Location must be at least 3 characters';
+    return '';
+  };
+  const validatePhone = (v: string) => {
+    const digits = v.replace(/\D/g, '');
+    if (!digits) return 'Contact number is required';
+    if (digits.length !== 10) return 'Contact number must be exactly 10 digits';
+    return '';
+  };
+  const runValidation = (touchAll?: boolean) => {
+    const next = {
+      name: validateName(formData.name),
+      location: validateLocation(formData.location),
+      contactNumber: validatePhone(formData.contactNumber),
+    };
+    setErrors(next);
+    if (touchAll) setTouched({ name: true, location: true, contactNumber: true });
+    return !next.name && !next.location && !next.contactNumber;
+  };
+  const filtered = React.useMemo(() => {
+    const list = warehouses.length ? warehouses : WAREHOUSES;
+    return list.filter(w => w.category === category);
+  }, [category, warehouses]);
+
+  // Reset hero image when selected warehouse changes
+  React.useEffect(() => {
+    setHeroIndex(0);
+  }, [selectedWarehouse?.id]);
+
+  // Fetch warehouses when entering the list screen (once)
+  const loadWarehouses = React.useCallback(async () => {
+    if (isWarehousesLoading) return;
+    setIsWarehousesLoading(true);
+    setWarehousesError(null);
+    setWarehouseRetryCount(0);
+    const maxRetries = 3;
+    let attempt = 0;
+    let lastError: any = null;
+    // Small helper
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    while (attempt < maxRetries) {
+      try {
+        const res = await fetchWarehouses(1, 10);
+        // Support shapes: {success,message,data:{data:[],pagination}}, or direct arrays
+        const itemsRaw: any = res?.data?.data ?? res?.data ?? res?.results ?? res?.items ?? res ?? [];
+        const items: any[] = Array.isArray(itemsRaw) ? itemsRaw : Array.isArray(itemsRaw?.data) ? itemsRaw.data : [];
+        const toCat = (id: any): Category => (id === 2 ? 'Vegetables' : id === 3 ? 'Grains' : 'Paddy');
+        const mapped: Warehouse[] = items.map((it: any, idx: number) => ({
+          id: String(it.id ?? it.warehouse_id ?? idx + 1),
+          name: it.name ?? it.title ?? `Warehouse ${idx + 1}`,
+          location: it.address ?? it.location ?? 'Unknown',
+          availability: (it.warehouse_status === 'open' || it.is_available === true || it.availability === 'Open') ? 'Open' : 'Close',
+          contact: it.contact_person_number ?? it.contact ?? it.phone ?? 'N/A',
+          photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : [images.landingPageImage],
+          space: it.fixed_space_amount ? `Available: ${it.fixed_space_amount}` : (it.space ?? 'Available: -'),
+          temperature: it.temperature_range ?? it.temperature ?? '-',
+          humidity: it.humidity ?? '-',
+          security: it.security_level ?? it.security ?? '-',
+          category: (it.category as Category) ?? toCat(it.category_id),
+        }));
+        setWarehouses(mapped);
+        setWarehouseRetryCount(attempt);
+        lastError = null;
+        break;
+      } catch (e: any) {
+        lastError = e;
+        attempt += 1;
+        setWarehouseRetryCount(attempt);
+        if (attempt < maxRetries) {
+          await delay(500); // brief pause before retry
+        }
+      }
     }
+    if (lastError) {
+      setWarehousesError(lastError?.message ?? 'Failed to load warehouses');
+      showErrorSnackbar('Failed to load warehouses');
+    }
+    setIsWarehousesLoading(false);
+  }, [isWarehousesLoading]);
+
+  React.useEffect(() => {
+    if (screen === Screen.Warehouses && !didWarehousesLoadRef.current) {
+      didWarehousesLoadRef.current = true;
+      loadWarehouses();
+    }
+  }, [screen]);
+
+  // Reset the guard when leaving Warehouses so it can reload on next entry
+  React.useEffect(() => {
+    if (screen !== Screen.Warehouses) {
+      didWarehousesLoadRef.current = false;
+    }
+  }, [screen]);
+
+  // Fetch details for a selected warehouse (optional enrichment)
+  React.useEffect(() => {
+    const enrich = async () => {
+      if (!selectedWarehouse?.id) return;
+      try {
+        const res = await fetchWarehouseById(selectedWarehouse.id);
+        const it = res?.data?.data ?? res?.data ?? res;
+        if (!it) return;
+        setSelectedWarehouse(prev => prev ? ({
+          ...prev,
+          name: it.name ?? prev.name,
+          location: it.address ?? it.location ?? prev.location,
+          contact: it.contact_person_number ?? it.contact ?? prev.contact,
+          space: it.fixed_space_amount ? `Available: ${it.fixed_space_amount}` : (it.space ?? prev.space),
+          temperature: it.temperature_range ?? it.temperature ?? prev.temperature,
+          humidity: it.humidity ?? prev.humidity,
+          security: it.security_level ?? it.security ?? prev.security,
+          photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : prev.photos,
+        }) : prev);
+      } catch {
+        // non-fatal
+      }
+    };
+    enrich();
+  }, [selectedWarehouse?.id]);
+
+  // Calendar helpers (reuse logic from Machine Rent)
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    return { daysInMonth: lastDay.getDate(), startingDay: firstDay.getDay() };
+  };
+  const isDateDisabled = (date: Date) => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return date < today;
+  };
+  const isDateUnavailable = (date: Date) => {
+    return date.getDate() === 13 && date.getMonth() === 7; // sample: Aug 13 unavailable
+  };
+  const isCurrentDate = (date: Date) => {
+    const t = new Date();
+    return date.getDate() === t.getDate() && date.getMonth() === t.getMonth() && date.getFullYear() === t.getFullYear();
+  };
+  const isDateSelected = (date: Date) => selectedDates.some(d => d.toDateString() === date.toDateString());
+  const navigateMonth = (dir: 'prev'|'next') => {
+    const nm = new Date(currentMonth);
+    nm.setMonth(nm.getMonth() + (dir === 'next' ? 1 : -1));
+    setCurrentMonth(nm);
+  };
+  const handleDatePress = (date: Date) => {
+    if (isDateDisabled(date) || isDateUnavailable(date)) return;
+    // Single-date toggle behavior
+    if (selectedDates.length === 1 && selectedDates[0].toDateString() === date.toDateString()) {
+      setSelectedDates([]);
+      setSelectedTimeSlot(null);
+      return;
+    }
+    setSelectedDates([date]);
+    setSelectedTimeSlot(null);
+  };
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const formatMonthYear = (date: Date) => `${months[date.getMonth()]} ${date.getFullYear()}`;
+  const formatSelectedDates = () => {
+    if (selectedDates.length === 0) return '';
+    const sorted=[...selectedDates].sort((a,b)=>a.getTime()-b.getTime());
+    const s=sorted[0], e=sorted[sorted.length-1];
+    if (s.getTime()===e.getTime()) return `${s.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
+    return `${s.getDate()} - ${e.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
+  };
+  const formatSingleSelectedDate = () => {
+    if (selectedDates.length !== 1) return '';
+    const d = selectedDates[0];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'planning':
-        return 'schedule';
-      case 'in-progress':
-        return 'trending-up';
-      case 'completed':
-        return 'check-circle';
-      default:
-        return 'help';
+  // Dynamic slot helpers
+  const hashString = (s: string) => {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = (h << 5) - h + s.charCodeAt(i);
+      h |= 0;
     }
+    return Math.abs(h);
   };
+  const getMorningSlotsFor = (date: Date, warehouseId?: string | null): TimeSlot[] => {
+    const seed = `${warehouseId ?? 'nw'}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const base = hashString(seed);
+    // Make weekends a bit tighter: fewer available slots on Sundays
+    const isSunday = date.getDay() === 0;
+    return BASE_MORNING_TIMES.map((label, idx) => {
+      const mod = (base + idx) % (isSunday ? 2 : 3);
+      // For Sunday roughly 50% unavailable, on other days ~33% unavailable
+      const available = mod !== 0;
+      return { id: `ts${idx + 1}`, label, available };
+    });
+  };
+  const morningSlots = React.useMemo(() => {
+    if (selectedDates.length !== 1) return [] as TimeSlot[];
+    return getMorningSlotsFor(selectedDates[0], selectedWarehouse?.id);
+  }, [selectedDates, selectedWarehouse?.id]);
 
-  return (
-    <SafeAreaView className="flex-1 bg-blue-50">
-      <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="mb-6 rounded-lg bg-green-700 p-4">
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-2xl font-bold text-white">Harvest Hub</Text>
-              <Text className="mt-1 text-green-200">Manage your harvest operations</Text>
-            </View>
-            <MaterialIcons name="agriculture" size={40} color="white" />
-          </View>
+  // Render blocks
+  const Landing = (
+    <View style={styles.landingRoot}>
+      <ImageBackground source={images.harvestHubLandingImage} style={styles.bgImage} imageStyle={styles.bgImageInner}>
+        <View style={styles.bgOverlay} />
+        <View style={styles.landingCardOverlay}>
+          <Text style={styles.title}>Store Your Harvest, Secure Your Income</Text>
+          <Text style={styles.subtitle}>
+            Reserve clean, safe, and climate-controlled warehouse space to protect your crops. Enjoy flexible storage duration, easy access, and reliable handling to keep your harvest in top condition until it’s ready to be sent to the market.
+          </Text>
+          <CustomButton
+            title="Visit Warehouse"
+            onPress={() => setScreen(Screen.Warehouses)}
+            variant="primary"
+            size="large"
+            fullWidth={true}
+          />
         </View>
+      </ImageBackground>
+    </View>
+  );
 
-        {/* Harvest Overview */}
-        <View className="mb-6 flex-row justify-between">
-          <Card className="mx-1 flex-1 bg-green-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="trending-up" size={24} color="#4CAF50" />
-              <Text className="text-lg font-bold text-green-800">1</Text>
-              <Text className="text-xs text-green-600">In Progress</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-blue-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="schedule" size={24} color="#2196F3" />
-              <Text className="text-lg font-bold text-blue-800">1</Text>
-              <Text className="text-xs text-blue-600">Planned</Text>
-            </Card.Content>
-          </Card>
-
-          <Card className="mx-1 flex-1 bg-gray-50">
-            <Card.Content className="items-center py-3">
-              <MaterialIcons name="check-circle" size={24} color="#666" />
-              <Text className="text-lg font-bold text-gray-800">1</Text>
-              <Text className="text-xs text-gray-600">Completed</Text>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Current Harvest Progress */}
-        <Card className="mb-6 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-green-800">Current Harvest Progress</Title>
-
-            {harvests
-              .filter(h => h.status === 'in-progress')
-              .map(harvest => (
-                <View key={harvest.id} className="mb-4">
-                  <View className="mb-2 flex-row items-center justify-between">
-                    <Text className="text-lg font-semibold text-gray-800">{harvest.crop}</Text>
-                    <Chip className={getStatusColor(harvest.status)}>{harvest.progress}% Complete</Chip>
-                  </View>
-
-                  <Text className="mb-3 text-sm text-gray-600">{harvest.field}</Text>
-
-                  <ProgressBar progress={harvest.progress / 100} color="#4CAF50" className="mb-3" />
-
-                  <View className="flex-row justify-between text-sm">
-                    <Text className="text-gray-600">Started: {harvest.startDate}</Text>
-                    <Text className="text-gray-600">Est. Completion: {harvest.estimatedCompletion}</Text>
-                  </View>
-                </View>
-              ))}
-          </Card.Content>
-        </Card>
-
-        {/* All Harvests */}
-        <View className="mb-6">
-          <View className="mb-4 flex-row items-center justify-between">
-            <Title className="text-lg text-green-800">All Harvests</Title>
-            <Button
-              mode="contained"
-              icon={() => <MaterialIcons name="add" size={20} color="white" />}
-              onPress={() => {}}
-            >
-              Plan Harvest
-            </Button>
+  const Warehouses = (
+    <View style={styles.flex}>
+      <SMHeader
+        title="Warehouses"
+        onBack={() => setScreen(Screen.Landing)}
+      />
+      <View style={styles.tabRow}>
+        {CATEGORIES.map(cat => (
+          <TouchableOpacity key={cat} style={[styles.tab, category === cat && styles.tabActive]} onPress={() => setCategory(cat)}>
+            <Text numberOfLines={2} style={[styles.tabText, category === cat && styles.tabTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+    {isWarehousesLoading && (
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color={GREEN} />
+      <Text style={styles.stateText}>Loading warehouses... {warehouseRetryCount > 0 ? `(retry ${warehouseRetryCount}/3)` : ''}</Text>
           </View>
-
-          {harvests.map(harvest => (
-            <Card key={harvest.id} className="mb-3 shadow-md">
-              <Card.Content className="p-4">
-                <View className="mb-3 flex-row items-start justify-between">
-                  <View className="flex-1">
-                    <Title className="mb-1 text-lg text-gray-800">{harvest.crop}</Title>
-                    <Text className="text-sm text-gray-600">{harvest.field}</Text>
-                  </View>
-                  <Chip
-                    className={getStatusColor(harvest.status)}
-                    icon={() => (
-                      <MaterialIcons
-                        name={getStatusIcon(harvest.status)}
-                        size={16}
-                        color={
-                          harvest.status === 'planning'
-                            ? '#2196F3'
-                            : harvest.status === 'in-progress'
-                              ? '#FF9800'
-                              : '#4CAF50'
-                        }
-                      />
-                    )}
-                  >
-                    {harvest.status.replace('-', ' ').charAt(0).toUpperCase() +
-                      harvest.status.replace('-', ' ').slice(1)}
-                  </Chip>
-                </View>
-
-                {harvest.status === 'in-progress' && (
-                  <View className="mb-3">
-                    <ProgressBar progress={harvest.progress / 100} color="#4CAF50" className="mb-2" />
-                    <Text className="text-right text-xs text-gray-500">{harvest.progress}% Complete</Text>
-                  </View>
-                )}
-
-                <View className="flex-row items-center justify-between border-t border-gray-100 pt-3">
-                  <View className="flex-row items-center">
-                    <MaterialIcons name="event" size={16} color="#666" />
-                    <Text className="ml-1 text-xs text-gray-600">{harvest.startDate}</Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <MaterialIcons name="scale" size={16} color="#666" />
-                    <Text className="ml-1 text-xs text-gray-600">Est. Yield: {harvest.yield}</Text>
+        )}
+        {!isWarehousesLoading && warehousesError && (
+          <View style={styles.centerState}>
+            <Text style={styles.stateText}>Failed to load warehouses.</Text>
+            <View style={{ height: 8 }} />
+            <CustomButton title="Retry" variant="outline" size="small" onPress={() => { setWarehouseRetryCount(0); loadWarehouses(); }} />
+          </View>
+        )}
+        {!isWarehousesLoading && !warehousesError && filtered.length === 0 && (
+          <View style={styles.centerState}>
+            <Text style={styles.stateText}>No warehouses found for “{category}”.</Text>
+            <View style={{ height: 8 }} />
+            <CustomButton title="Refresh" variant="outline" size="small" onPress={loadWarehouses} />
+          </View>
+        )}
+        {!isWarehousesLoading && !warehousesError && filtered.length > 0 && (
+          <>
+            {filtered.map(item => (
+              <TouchableOpacity key={item.id} style={styles.card} onPress={() => { setSelectedWarehouse(item); setScreen(Screen.WarehouseDetail); }}>
+                <Image source={item.photos[0]} style={styles.thumb} />
+                <View style={styles.cardBody}>
+                  <Text style={styles.cardTitle}>{item.name}</Text>
+                  <Text style={styles.cardMeta}>{item.location}</Text>
+                  <View style={styles.inlineRow}>
+                    <Text style={[styles.badge, item.availability === 'Open' ? styles.badgeOpen : styles.badgeClose]}>{item.availability}</Text>
+                    <Text style={styles.cardMeta}>Contact: {item.contact}</Text>
                   </View>
                 </View>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
 
-                <View className="mt-3 flex-row space-x-2">
-                  <Button
-                    mode="outlined"
-                    size="small"
-                    icon={() => <MaterialIcons name="visibility" size={16} color="#055476" />}
-                    onPress={() => {}}
-                  >
-                    View Details
-                  </Button>
-                  {harvest.status === 'planning' && (
-                    <Button
-                      mode="contained"
-                      size="small"
-                      icon={() => <MaterialIcons name="play-arrow" size={16} color="white" />}
-                      onPress={() => {}}
-                    >
-                      Start Harvest
-                    </Button>
-                  )}
-                  {harvest.status === 'in-progress' && (
-                    <Button
-                      mode="contained"
-                      size="small"
-                      icon={() => <MaterialIcons name="update" size={16} color="white" />}
-                      onPress={() => {}}
-                    >
-                      Update Progress
-                    </Button>
-                  )}
-                </View>
-              </Card.Content>
-            </Card>
+  const WarehouseDetail = selectedWarehouse && (
+    <View style={styles.flex}>
+      <SMHeader title="Warehouses" onBack={() => setScreen(Screen.Warehouses)} />
+      <ScrollView contentContainerStyle={styles.detailScroll} showsVerticalScrollIndicator={false}>
+        <Image source={selectedWarehouse.photos[heroIndex]} style={styles.detailHero} />
+        <View style={styles.thumbRow}>
+          {selectedWarehouse.photos.map((ph, idx) => (
+            <TouchableOpacity key={idx} onPress={() => setHeroIndex(idx)} activeOpacity={0.8}>
+              <Image source={ph} style={[styles.smallThumb, idx === heroIndex && styles.smallThumbSelected]} />
+            </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.detailTitle}>{selectedWarehouse.name}</Text>
+        <Text style={styles.detailSub}>{selectedWarehouse.location}</Text>
 
-        {/* Harvest Tips */}
-        <Card className="mb-6 shadow-md">
-          <Card.Content>
-            <Title className="mb-4 text-lg text-green-800">Harvest Tips</Title>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Space</Text><Text style={styles.infoValue}>{selectedWarehouse.space}</Text></View>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Temperature</Text><Text style={styles.infoValue}>{selectedWarehouse.temperature}</Text></View>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Humidity</Text><Text style={styles.infoValue}>{selectedWarehouse.humidity}</Text></View>
+        <View style={styles.infoStrip}><Text style={styles.infoLabel}>Security</Text><Text style={styles.infoValue}>{selectedWarehouse.security}</Text></View>
 
-            <View className="space-y-3">
-              <View className="flex-row items-start">
-                <MaterialIcons name="lightbulb" size={20} color="#FF9800" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Optimal Harvest Time</Text>
-                  <Text className="text-xs text-gray-600">
-                    Harvest when moisture content is 14-15% for best storage quality
-                  </Text>
-                </View>
-              </View>
+        <View style={{ alignItems: 'flex-end', marginTop: 4, marginBottom: 8 }}>
+          <TouchableOpacity style={smHeaderStyles.miniBtn} onPress={() => setScreen(Screen.MarketPrices)}>
+            <Ionicons name={"trending-up-outline" as any} size={16} color={Colors.primary.contrastText} style={smHeaderStyles.miniBtnIcon} />
+            <Text style={smHeaderStyles.miniBtnText}>Market</Text>
+          </TouchableOpacity>
+        </View>
 
-              <View className="flex-row items-start">
-                <MaterialIcons name="schedule" size={20} color="#2196F3" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Weather Monitoring</Text>
-                  <Text className="text-xs text-gray-600">
-                    Check weather forecasts and avoid harvesting during wet conditions
-                  </Text>
-                </View>
-              </View>
+        <View style={styles.rowGap}>
+          <CustomButton
+            title="View Inventory"
+            variant="outline"
+            size="large"
+            fullWidth={true}
+            onPress={() => setScreen(Screen.Inventory)}
+          />
+          <CustomButton
+            title="Book Slot"
+            variant="primary"
+            size="large"
+            fullWidth={true}
+            onPress={() => setScreen(Screen.SlotCalendar)}
+          />
+        </View>
+      </ScrollView>
+    </View>
+  );
 
-              <View className="flex-row items-start">
-                <MaterialIcons name="storage" size={20} color="#4CAF50" />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Storage Preparation</Text>
-                  <Text className="text-xs text-gray-600">
-                    Ensure storage facilities are clean and properly ventilated
-                  </Text>
-                </View>
+  const InventoryList = (
+    <View style={styles.flex}>
+      <SMHeader title="Inventories" onBack={() => setScreen(Screen.WarehouseDetail)} />
+      <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <View style={styles.invHeaderBlock}>
+          <Text style={styles.invSectionTitle}>Stored Products</Text>
+          <Text style={styles.invSectionDesc}>
+            Complete list of all products all have stored in this warehouse with quantities, storage dates, and current status.
+          </Text>
+        </View>
+
+        {INVENTORIES.map(inv => (
+          <View key={inv.id} style={styles.inventoryCard}>
+            <View style={styles.invCardHead}>
+              <Text style={styles.invTitle}>{inv.product}</Text>
+              <View style={styles.conditionWrap}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={GREEN} />
+                <Text style={styles.conditionText}>{inv.condition} Condition</Text>
               </View>
             </View>
-          </Card.Content>
-        </Card>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Quantity</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.quantity}</Text></View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Location</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.location}</Text></View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Stored Date</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.storedDate}</Text></View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Product Owner</Text>
+              <View style={styles.valueBox}><Text style={styles.valueText}>{inv.owner}</Text></View>
+            </View>
+          </View>
+        ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+
+  const parsePriceNum = (s: string) => {
+    const m = s.match(/([0-9]+(?:\.[0-9]+)?)/);
+    return m ? parseFloat(m[1]) : 0;
+  };
+  const toPriceStr = (n: number) => `Rs. ${n.toFixed(2)} (per kg)`;
+  const getMarketPricesForWarehouse = (wh?: Warehouse | null): Price[] => {
+    if (!wh) return MARKET_PRICES;
+    return MARKET_PRICES.map((p, idx) => {
+      const base = parsePriceNum(p.price);
+      const seed = hashString(`${wh.id}-${idx}`);
+      const offset = ((seed % 201) - 100) / 10; // -10.0 to +10.0
+      const change = (((seed >> 3) % 301) - 150) / 10; // -15.0 to +15.0
+      const price = Math.max(1, base + offset);
+      return { id: p.id, product: p.product, price: toPriceStr(price), change };
+    });
+  };
+
+  const MarketPrices = (
+    <View style={styles.flex}>
+      <SMHeader title="Market Prices" onBack={() => setScreen(selectedWarehouse ? Screen.WarehouseDetail : Screen.Warehouses)} />
+      <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <View style={styles.invHeaderBlock}>
+          <Text style={styles.invSectionTitle}>Today's Paddy Market Rates</Text>
+          <Text style={styles.invSectionDesc}>
+            Current market prices for all paddy varieties with daily price changes and trend indicators.
+          </Text>
+        </View>
+
+        {/* Load prices from API on first render of this screen */}
+        {(() => {
+          if (!marketPrices && !isPricesLoading) {
+            setIsPricesLoading(true);
+            fetchMarketPrices()
+              .then((res: any) => {
+                const items: any[] = res?.data ?? res?.items ?? res ?? [];
+                const mapped: Price[] = items.map((it: any, idx: number) => ({
+                  id: String(it.id ?? idx + 1),
+                  product: it.product ?? it.item_name ?? it.commodity ?? `Item ${idx + 1}`,
+                  price: typeof it.price === 'number' ? `Rs. ${it.price.toFixed(2)} (per kg)` : (it.price ?? toPriceStr(0)),
+                  change: typeof it.change === 'number' ? it.change : 0,
+                }));
+                // If API returns empty, fallback to synthetic per-warehouse
+                setMarketPrices(mapped.length ? mapped : getMarketPricesForWarehouse(selectedWarehouse));
+              })
+              .catch(() => { setMarketPrices(getMarketPricesForWarehouse(selectedWarehouse)); setPricesFailed(true); })
+              .finally(() => setIsPricesLoading(false));
+          }
+          if (isPricesLoading && !marketPrices) {
+            return (
+              <View style={styles.centerState}>
+                <ActivityIndicator size="large" color={GREEN} />
+                <Text style={styles.stateText}>Loading market prices...</Text>
+              </View>
+            );
+          }
+          const data = marketPrices ?? [];
+          if (data.length === 0) {
+            return (
+              <View style={styles.centerState}>
+                <Text style={styles.stateText}>No market prices available.</Text>
+              </View>
+            );
+          }
+          return data.map(mp => {
+          const up = mp.change > 0;
+          const down = mp.change < 0;
+          const deltaColor = up ? styles.deltaUp.color : down ? styles.deltaDown.color : Colors.text.secondary;
+          const arrowName = up ? 'trending-up-outline' : down ? 'trending-down-outline' : 'remove-outline';
+          const deltaText = `${mp.change > 0 ? '+' : ''}${mp.change.toFixed(2)} (Rs.)`;
+          return (
+            <View key={mp.id} style={styles.inventoryCard}>
+              <View style={styles.invCardHead}>
+                <Text style={styles.invTitle}>{mp.product}</Text>
+                <View style={styles.conditionWrap}>
+                  <Ionicons name={arrowName as any} size={16} color={deltaColor} />
+                  <Text style={[styles.delta, up ? styles.deltaUp : down ? styles.deltaDown : styles.deltaNeutral]}>{deltaText}</Text>
+                </View>
+              </View>
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>Current Price</Text>
+                <View style={styles.valueBox}><Text style={styles.valueText}>{mp.price}</Text></View>
+              </View>
+            </View>
+          );
+          });
+        })()}
+        {/* If prices failed, show a soft notice */}
+        {pricesFailed && (
+          <View style={[styles.centerState, { paddingTop: 0 }]}>
+            <Text style={[styles.stateText, { color: Colors.text.secondary }]}>Live prices unavailable. Showing estimates.</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+
+  const SlotCalendar = (
+    <View style={styles.flex}>
+      <SMHeader title="Book a Slot" onBack={() => setScreen(Screen.WarehouseDetail)} />
+      <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+        {/* Intro section above the calendar */}
+        <View style={[styles.padH, { marginTop: 8, marginBottom: 4 }]}>
+          <Text style={styles.invSectionTitle}>Available Time Slots</Text>
+          <Text style={styles.invSectionDesc}>
+            Choose your preferred time slot to store harvest and get paid.
+          </Text>
+        </View>
+        <View style={styles.calendarWrap}>
+        <View style={styles.calHeader}>
+          <TouchableOpacity onPress={() => navigateMonth('prev')} style={styles.calNavBtn}>
+            <Ionicons name="chevron-back" size={18} color={Colors.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.monthLabel}>{formatMonthYear(currentMonth)}</Text>
+          <TouchableOpacity onPress={() => navigateMonth('next')} style={styles.calNavBtn}>
+            <Ionicons name="chevron-forward" size={18} color={Colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.calendarRow}>
+          {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (<Text key={d} style={styles.calendarHead}>{d}</Text>))}
+        </View>
+        <View style={styles.calendarGrid}>
+          {(() => {
+            const { daysInMonth, startingDay } = getDaysInMonth(currentMonth);
+            const nodes: React.ReactNode[] = [];
+            for (let i=0;i<startingDay;i++) nodes.push(<View key={`e-${i}`} style={styles.dayCell} />);
+            for (let day=1; day<=daysInMonth; day++){
+              const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              const disabled = isDateDisabled(date);
+              const unavailable = isDateUnavailable(date);
+              const current = isCurrentDate(date);
+              const selected = isDateSelected(date);
+              const cellStyle = [styles.dayCell,
+                disabled ? styles.dayDisabled : unavailable ? styles.dayUnavailable : selected ? styles.daySelected : current ? styles.dayCurrent : styles.dayDefault
+              ];
+              const textStyle = [styles.dayText,
+                disabled ? styles.dayTextDisabled : unavailable ? styles.dayTextUnavailable : selected ? styles.dayTextSelected : current ? styles.dayTextCurrent : styles.dayTextDefault
+              ];
+              nodes.push(
+                <TouchableOpacity key={`d-${day}`} disabled={disabled || unavailable} onPress={() => handleDatePress(date)} style={cellStyle}>
+                  <Text style={textStyle}>{day}</Text>
+                </TouchableOpacity>
+              );
+            }
+            return nodes;
+          })()}
+        </View>
+        {selectedDates.length>0 && (
+          <Text style={[styles.cardMeta,{marginTop:12}]}>Selected: {formatSelectedDates()}</Text>
+        )}
+      </View>
+      {/* Selected Summary */}
+      {selectedDates.length>0 && (
+        <View style={[styles.summaryCard, styles.padH]}>
+          <Text style={[styles.valueText, { fontWeight: '700', marginBottom: 4 }]}>Selected Warehouse - {selectedWarehouse?.name ?? 'N/A'}</Text>
+          <Text style={[styles.valueText, { fontWeight: '700' }]}>Selected Dates - {formatSelectedDates()}</Text>
+        </View>
+      )}
+
+      {/* Time Slots (show when a single date is selected) */}
+  {selectedDates.length === 1 && (
+        <View style={[styles.slotCard, styles.padH]}>
+          <Text style={styles.slotSmallLabel}>Your Selected Date</Text>
+          <View style={[styles.valueBox, { marginTop: 6, marginBottom: 12 }]}>
+            <Text style={styles.valueText}>{formatSingleSelectedDate()}</Text>
+          </View>
+
+          <Text style={styles.slotSectionTitle}>Available Slots -  Morning</Text>
+          <View style={{ marginTop: 8 }}>
+            {morningSlots.length === 0 && (
+              <Text style={[styles.cardMeta, { paddingVertical: 8 }]}>No slots available for the selected date.</Text>
+            )}
+            {morningSlots.map(slot => (
+              <View key={slot.id} style={styles.slotItemRow}>
+                <Text style={styles.slotTimeText}>{slot.label}</Text>
+                {slot.available ? (
+                  <CustomButton
+                    title="Book Slot"
+                    size="small"
+                    variant="primary"
+                    onPress={() => { setSelectedTimeSlot(slot.label); setShowDetailsForm(true); }}
+                  />
+                ) : (
+                  <View style={styles.slotDisabledPill}>
+                    <Text style={styles.slotDisabledText}>Not Available</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+  )}
+  {selectedDates.length !== 1 && (
+        <View style={styles.padH}>
+          <CustomButton title="Book Slot" onPress={() => setShowDetailsForm(true)} variant="primary" size="large" fullWidth={true} disabled={selectedDates.length===0} />
+        </View>
+  )}
+
+  </ScrollView>
+
+      {/* Details Form Overlay */}
+      {showDetailsForm && (
+        <View style={styles.overlayContainer} pointerEvents="box-none">
+          <TouchableOpacity style={styles.overlayBackdrop} activeOpacity={1} onPress={() => { setShowDetailsForm(false); Keyboard.dismiss(); }} accessibilityRole="button" />
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={24}>
+            <View style={styles.bottomSheet}>
+              <ScrollView contentContainerStyle={styles.sheetScrollBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <Text style={styles.sheetTitle}>Provide Your Details</Text>
+
+            {selectedDates.length === 1 && selectedTimeSlot && (
+              <View style={[styles.summaryCard, { marginBottom: 12 }]}>
+                <Text style={[styles.valueText, { fontWeight: '700', marginBottom: 4 }]}>Selected Date - {formatSingleSelectedDate()}</Text>
+                <Text style={[styles.valueText, { fontWeight: '700' }]}>Selected Slot - {selectedTimeSlot}</Text>
+              </View>
+            )}
+
+            <View style={styles.formFieldBlock}>
+              <Text style={styles.sheetLabel}>Name</Text>
+              <TextInput
+                placeholder="Enter Your Name"
+                style={[inputStyle, touched.name && errors.name ? styles.errorInput : null]}
+                value={formData.name}
+                onChangeText={(t)=>{ setFormData({ ...formData, name: t }); if (touched.name) setErrors(e=>({ ...e, name: validateName(t) })); }}
+                onBlur={()=>{ setTouched(prev=>({ ...prev, name: true })); setErrors(e=>({ ...e, name: validateName(formData.name) })); }}
+              />
+              {touched.name && errors.name ? (<Text style={styles.errorText}>{errors.name}</Text>) : null}
+            </View>
+            <View style={styles.formFieldBlock}>
+              <Text style={styles.sheetLabel}>Location</Text>
+              <TextInput
+                placeholder="Enter Accurate Location of Your Land"
+                style={[inputStyle, touched.location && errors.location ? styles.errorInput : null]}
+                value={formData.location}
+                onChangeText={(t)=>{ setFormData({ ...formData, location: t }); if (touched.location) setErrors(e=>({ ...e, location: validateLocation(t) })); }}
+                onBlur={()=>{ setTouched(prev=>({ ...prev, location: true })); setErrors(e=>({ ...e, location: validateLocation(formData.location) })); }}
+              />
+              {touched.location && errors.location ? (<Text style={styles.errorText}>{errors.location}</Text>) : null}
+            </View>
+            <View style={styles.formFieldBlock}>
+              <Text style={styles.sheetLabel}>Contact Number</Text>
+              <TextInput
+                placeholder="Enter Your Phone Number"
+                style={[inputStyle, touched.contactNumber && errors.contactNumber ? styles.errorInput : null]}
+                keyboardType="phone-pad"
+                value={formData.contactNumber}
+                onChangeText={(t)=>{ setFormData({ ...formData, contactNumber: t }); if (touched.contactNumber) setErrors(e=>({ ...e, contactNumber: validatePhone(t) })); }}
+                onBlur={()=>{ setTouched(prev=>({ ...prev, contactNumber: true })); setErrors(e=>({ ...e, contactNumber: validatePhone(formData.contactNumber) })); }}
+              />
+              {touched.contactNumber && errors.contactNumber ? (<Text style={styles.errorText}>{errors.contactNumber}</Text>) : null}
+            </View>
+
+            <View>
+              <CustomButton
+                title={isLoading ? 'Processing...' : 'Book Slot'}
+                onPress={async () => {
+                  const ok = runValidation(true);
+                  if (!ok) return;
+                  if (!selectedWarehouse?.id) {
+                    showErrorSnackbar('Select a warehouse first');
+                    return;
+                  }
+                  if (selectedDates.length !== 1) {
+                    showErrorSnackbar('Select a single date for booking');
+                    return;
+                  }
+                  if (!selectedTimeSlot) {
+                    showErrorSnackbar('Select a time slot before booking');
+                    return;
+                  }
+                  // Require auth token to submit booking
+                  const token = await AsyncStorage.getItem('token');
+                  if (!token) {
+                    showErrorSnackbar('Please sign in to book a slot');
+                    // Navigate to sign-in flow
+                    try { router.push('/auth/landingScreen'); } catch {}
+                    return;
+                  }
+                  const digits = formData.contactNumber.replace(/\D/g, '');
+                  setIsLoading(true);
+                  try {
+                    // Current backend API doesn't accept date/time or contact fields.
+                    // We submit via storage request and pack the extra info into requirements.
+                    const payload = {
+                      warehouse_id: Number(selectedWarehouse.id),
+                      request_type: 'storage' as const,
+                      item_name: 'Harvest',
+                      quantity: 1,
+                      storage_duration_days: 1,
+                      storage_requirements: `Name: ${formData.name}; Phone: ${digits}; Location: ${formData.location}; Date: ${formatSingleSelectedDate()}; Slot: ${selectedTimeSlot ?? 'N/A'}`,
+                    };
+                    await createStorageRequest(payload);
+                    showSuccessSnackbar('Request submitted');
+                    setShowDetailsForm(false);
+                    setShowConfirmation(true);
+                  } catch (e: any) {
+                    showErrorSnackbar(e?.response?.data?.message ?? e?.message ?? 'Failed to submit request');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                variant="primary"
+                size="large"
+                fullWidth={true}
+                loading={isLoading}
+                disabled={isLoading}
+              />
+              <View style={{ height: 8 }} />
+              <CustomButton
+                title="Cancel"
+                onPress={() => { setShowDetailsForm(false); setFormData({ name:'', location:'', contactNumber:'' }); setSelectedTimeSlot(null); }}
+                variant="outline"
+                size="large"
+                fullWidth={true}
+              />
+            </View>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      )}
+
+      {/* Confirmation Overlay */}
+      {showConfirmation && (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmHeader}>
+            <View style={{ width: 48, height: 48 }} />
+            <Text style={styles.confirmHeaderTitle}>Success!</Text>
+            <View style={{ width: 48, height: 48 }} />
+          </View>
+
+          <View style={styles.confirmCenter}>
+            <View style={styles.checkRing}>
+              <MaterialIcons name="check" size={48} color="#000" />
+            </View>
+            <Text style={styles.confirmBig}>Storage Slot Request Submitted!</Text>
+            <Text style={styles.confirmDesc}>
+              Your warehouse deposit slot is reserved! Please arrive on time with your crops, valid ID, and booking confirmation. Our team will weigh, inspect, and store your products safely.
+            </Text>
+            <CustomButton
+              title="Finish"
+              onPress={() => { setShowConfirmation(false); setScreen(Screen.Warehouses); setSelectedTimeSlot(null); }}
+              variant="primary"
+              size="large"
+              fullWidth={true}
+            />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  let content: React.ReactNode = null;
+  switch (screen) {
+    case Screen.Landing: content = Landing; break;
+    case Screen.Warehouses: content = Warehouses; break;
+    case Screen.WarehouseDetail: content = WarehouseDetail; break;
+    case Screen.Inventory: content = InventoryList; break;
+    case Screen.MarketPrices: content = MarketPrices; break;
+    case Screen.SlotCalendar: content = SlotCalendar; break;
+    case Screen.BookingForm: content = null; break; // legacy route unused
+    case Screen.BookingConfirmation: content = null; break; // legacy route unused
+  }
+
+  return <View style={styles.screenRoot}>{content}</View>;
+};
+
+// Soil Management–style header (chevron back, centered title, placeholder right)
+const SMHeader: React.FC<{ title: string; onBack?: () => void; right?: React.ReactNode }> = ({ title, onBack, right }) => (
+  <View style={smHeaderStyles.header}>
+    {onBack ? (
+      <TouchableOpacity style={smHeaderStyles.backButton} onPress={onBack}>
+        <View style={smHeaderStyles.backCircle}>
+          <Ionicons name="chevron-back" size={24} color="#374151" />
+        </View>
+      </TouchableOpacity>
+    ) : (
+      <View style={smHeaderStyles.placeholder} />
+    )}
+    <Text style={smHeaderStyles.headerTitle}>{title}</Text>
+  {right ? right : <View style={smHeaderStyles.placeholder} />}
+  </View>
+);
+
+const styles = StyleSheet.create({
+  screenRoot: { flex: 1, backgroundColor: Colors.background.default },
+  flex: { flex: 1, backgroundColor: Colors.background.default, paddingHorizontal: 16, paddingTop: 12 },
+  centerState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 24 },
+  stateText: { color: Colors.text.secondary, marginTop: 8, fontSize: 13 },
+  // Landing
+  landingRoot: { flex: 1 },
+  bgImage: { flex: 1, justifyContent: 'flex-end' },
+  bgImageInner: { resizeMode: 'cover' },
+  bgOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
+  landingCardOverlay: {
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: 24,
+    margin: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  title: { fontSize: 22, fontWeight: '700', color: GREEN, marginBottom: 10, textAlign: 'center' },
+  subtitle: { fontSize: 14, lineHeight: 20, color: Colors.text.secondary, textAlign: 'center', marginBottom: 18 },
+  // headerLink removed; Soil Management header doesn’t use right action here
+
+  // Tabs & list
+  tabRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  tab: { flex: 1, marginHorizontal: 4, backgroundColor: GREEN_LIGHT, paddingHorizontal: 8, paddingVertical: 6, minHeight: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  tabActive: { backgroundColor: GREEN },
+  tabText: { fontSize: 13, fontWeight: '600', color: GREEN, paddingHorizontal: 4, textAlign: 'center', lineHeight: 16 },
+  tabTextActive: { color: Colors.primary.contrastText },
+  listPad: { paddingBottom: 32, paddingHorizontal: 4 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+
+  // Cards
+  card: { flexDirection: 'row', backgroundColor: Colors.background.default, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, alignItems: 'center' },
+  thumb: { width: 70, height: 70, borderRadius: 10, backgroundColor: '#E0E0E0' },
+  cardBody: { flex: 1, marginLeft: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: GREEN },
+  cardMeta: { fontSize: 13, color: Colors.text.secondary },
+  inlineRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 12, overflow: 'hidden', color: Colors.text.primary },
+  badgeOpen: { backgroundColor: GREEN_LIGHT, color: GREEN },
+  badgeClose: { backgroundColor: '#FEE2E2', color: '#B91C1C' },
+
+  // Detail
+  detailScroll: { padding: 16 },
+  detailHero: { width: '100%', height: 200, borderRadius: 16, marginBottom: 10 },
+  thumbRow: { flexDirection: 'row', marginBottom: 10 },
+  smallThumb: { width: 56, height: 56, borderRadius: 8, marginRight: 8, borderWidth: 2, borderColor: 'transparent' },
+  smallThumbSelected: { borderColor: GREEN },
+  detailTitle: { fontSize: 18, fontWeight: '700', color: GREEN, marginTop: 6 },
+  detailSub: { fontSize: 13, color: Colors.text.secondary, marginBottom: 8 },
+  infoStrip: { backgroundColor: GREEN_LIGHT, borderRadius: 12, padding: 12, marginBottom: 10 },
+  infoLabel: { fontSize: 13, fontWeight: '700', color: '#000' },
+  infoValue: { fontSize: 13, color: '#000' },
+  rowGap: { marginTop: 6, gap: 10 },
+
+  // Inventory
+  invHeaderBlock: { paddingHorizontal: 4, marginBottom: 10 },
+  invSectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  invSectionDesc: { fontSize: 12, color: Colors.text.secondary, marginTop: 4 },
+  inventoryCard: {
+    backgroundColor: Colors.background.default,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  invCardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  invTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  conditionWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  conditionText: { fontSize: 12, color: Colors.text.primary },
+  delta: { fontSize: 12, fontWeight: '700' },
+  deltaUp: { color: '#22C55E' },
+  deltaDown: { color: '#EF4444' },
+  deltaNeutral: { color: Colors.text.secondary },
+  fieldBlock: { marginBottom: 10 },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: Colors.text.primary, marginBottom: 6 },
+  valueBox: { backgroundColor: '#E9ECEF', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12 },
+  valueText: { fontSize: 13, color: Colors.text.primary },
+  scrollBody: { paddingBottom: 32 },
+
+  // Slot card + rows
+  slotCard: { backgroundColor: Colors.background.default, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
+  slotSmallLabel: { fontSize: 12, color: Colors.text.secondary },
+  slotSectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.text.primary },
+  slotItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F3F4F6', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, marginBottom: 8 },
+  slotTimeText: { fontSize: 13, color: Colors.text.primary },
+  slotDisabledPill: { backgroundColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
+  slotDisabledText: { color: '#9CA3AF', fontWeight: '700', fontSize: 12 },
+
+  // Market styles
+
+  // Calendar
+  calendarWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  calHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  calNavBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  monthLabel: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  calendarRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  calendarHead: { width: 40, textAlign: 'center', fontSize: 12, color: Colors.text.secondary },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+  dayCell: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  dayAvailable: { backgroundColor: GREEN_LIGHT },
+  dayDefault: { backgroundColor: 'transparent' },
+  dayCurrent: { borderWidth: 2, borderColor: GREEN, backgroundColor: 'transparent' },
+  daySelected: { backgroundColor: GREEN },
+  dayUnavailable: { backgroundColor: '#FEE2E2' },
+  dayDisabled: { backgroundColor: '#F3F4F6' },
+  dayText: { fontSize: 12, color: Colors.text.primary },
+  dayTextDefault: { color: Colors.text.primary },
+  dayTextCurrent: { color: Colors.text.primary, fontWeight: '700' },
+  dayTextSelected: { color: Colors.primary.contrastText, fontWeight: '700' },
+  dayTextUnavailable: { color: '#B91C1C' },
+  dayTextDisabled: { color: '#9CA3AF' },
+  slotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  slotChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: GREEN_LIGHT },
+  slotText: { color: GREEN, fontWeight: '600' },
+  padH: { paddingHorizontal: 16, paddingBottom: 16 },
+
+  // Form
+  formPad: { padding: 16 },
+  formCard: { backgroundColor: Colors.background.default, borderRadius: 22, padding: 24, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: GREEN, marginBottom: 12, textAlign: 'center' },
+
+  // Confirmation
+  confirmCard: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background.default, padding: 24 },
+  checkCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: GREEN_LIGHT, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  checkMark: { fontSize: 38, fontWeight: '700', color: GREEN },
+  confirmTitle: { fontSize: 20, fontWeight: '700', color: GREEN, marginBottom: 12, textAlign: 'center' },
+  confirmMsg: { fontSize: 14, lineHeight: 20, color: Colors.text.secondary, textAlign: 'center', marginBottom: 24, paddingHorizontal: 6 },
+
+  // Overlays (match Machine Rent look & behavior)
+  overlayContainer: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', zIndex: 50 },
+  overlayBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 40, },
+  bottomSheet: { backgroundColor: '#fff', borderTopLeftRadius: 40, borderTopRightRadius: 40, padding: 24, paddingBottom: 32, zIndex: 60, elevation: 10 },
+  sheetScrollBody: { paddingBottom: 16 },
+  sheetTitle: { fontSize: 22, fontWeight: '700', color: Colors.text.primary, textAlign: 'center', marginBottom: 16 },
+  sheetLabel: { fontSize: 14, fontWeight: '700', color: Colors.text.primary, marginBottom: 6 },
+  formFieldBlock: { marginBottom: 8 },
+  errorInput: { borderColor: '#DC2626' },
+  errorText: { color: '#DC2626', fontSize: 12, marginTop: -6, marginBottom: 8 },
+  summaryCard: { backgroundColor: Colors.background.default, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
+
+  confirmOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff' },
+  confirmHeader: { paddingTop: 64, paddingHorizontal: 24, paddingBottom: 12, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  confirmHeaderTitle: { fontSize: 22, fontWeight: '700', color: '#000', textAlign: 'center' },
+  confirmCenter: { flex: 1, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' },
+  checkRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  confirmBig: { fontSize: 20, fontWeight: '700', color: '#000', textAlign: 'center', marginBottom: 12 },
+  confirmDesc: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20, marginBottom: 24, paddingHorizontal: 8 },
+});
+
+const inputStyle = { marginBottom: 12, borderRadius: 12, borderWidth: 1, borderColor: GREEN_LIGHT, backgroundColor: Colors.background.default, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: Colors.text.primary } as const;
+
+export default HarvestHubScreen;
+
+const smHeaderStyles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginTop: 12,
+    backgroundColor: 'white',
+  // outline removed per design feedback
+  },
+  backButton: { padding: 4, paddingRight: 8 },
+  backCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  placeholder: { width: 40 },
+  miniBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: Colors.primary.main, flexDirection: 'row', alignItems: 'center' },
+  miniBtnText: { color: Colors.primary.contrastText, fontSize: 12, fontWeight: '700' },
+  miniBtnIcon: { marginRight: 6 },
+});

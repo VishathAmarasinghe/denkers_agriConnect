@@ -12,7 +12,14 @@ export const store = configureStore({
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
-      thunk: undefined,
+      serializableCheck: {
+        // Ignore these action types
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        // Ignore these field paths in all actions
+        ignoredActionPaths: ['payload.timestamp'],
+        // Ignore these paths in the state
+        ignoredPaths: ['auth.userProfile'],
+      },
     }),
 });
 

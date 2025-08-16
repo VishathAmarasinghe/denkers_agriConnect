@@ -8,8 +8,10 @@ import { MD3LightTheme as DefaultPaperTheme, PaperProvider, Portal } from 'react
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import '../global.css';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 import Snackbar from '@/components/ui/Snackbar';
+import AuthWrapper from '@/components/AuthWrapper';
 import { store } from '@/slice/store';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -17,6 +19,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
+    // Preload vector icon fonts used across the app (tab bar, screens)
+    ...MaterialCommunityIcons.font,
+    ...MaterialIcons.font,
     'Poppins-Black': require('../assets/fonts/Poppins-Black.ttf'),
     'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
     'Poppins-ExtraBold': require('../assets/fonts/Poppins-ExtraBold.ttf'),
@@ -80,14 +85,16 @@ export default function RootLayout() {
         {/* Force PaperProvider to use customPaperTheme (light mode) */}
         <PaperProvider theme={customPaperTheme}>
           <Portal.Host>
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-              {/* <Stack.Screen name="tabs" options={{ headerShown: false }} />
-              <Stack.Screen name="client-tabs" options={{ headerShown: false }} /> */}
-              <Stack.Screen name="+not-found" />
-            </Stack>
+            <AuthWrapper>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="auth" options={{ headerShown: false }} />
+                <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+                {/* <Stack.Screen name="tabs" options={{ headerShown: false }} />
+                <Stack.Screen name="client-tabs" options={{ headerShown: false }} /> */}
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </AuthWrapper>
             <Snackbar />
           </Portal.Host>
           {/* Force status bar to light mode */}
