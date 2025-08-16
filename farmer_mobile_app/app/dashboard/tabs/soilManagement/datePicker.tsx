@@ -8,10 +8,44 @@ import {
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface SoilCollectionCenter {
+  id: number;
+  name: string;
+  location_id: number;
+  address: string;
+  contact_number: string;
+  contact_person: string | null;
+  description: string | null;
+  image_url: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  place_id: string | null;
+  operating_hours: string | null;
+  services_offered: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: SoilCollectionCenter[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 interface DayObject {
   day: number;
   date: Date;
@@ -21,26 +55,86 @@ interface DayObject {
 }
 
 export default function DateTimePicker() {
+  const { locationId } = useLocalSearchParams();
+  
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState('Anuradhapura Office - 2');
+  const [selectedLocation, setSelectedLocation] = useState<SoilCollectionCenter | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [mobileNumber, setMobileNumber] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [userToken, setUserToken] = useState<string | null>(null);
+
+  // Get the usertoken from the local storage
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        setUserToken(token);
+      } catch (error) {
+        console.error('Error getting token:', error);
+      }
+    };
+    getToken();
+  }, []);
+
+  // Fetch location data when component mounts
+  useEffect(() => {
+    if (locationId) {
+      fetchLocationData();
+    } else {
+      setError('No location selected');
+      setLoading(false);
+    }
+  }, [locationId]);
+
+  const fetchLocationData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('http://206.189.89.116:3000/api/v1/soil-collection-centers?page=1&limit=5');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.success) {
+        // Find the selected location by ID
+        const location = data.data.find(center => center.id === parseInt(locationId as string));
+        
+        if (location) {
+          setSelectedLocation(location);
+        } else {
+          throw new Error('Selected location not found');
+        }
+      } else {
+        throw new Error(data.message || 'Failed to fetch location data');
+      }
+    } catch (err) {
+      console.error('Error fetching location data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load location data');
+      Alert.alert('Error', 'Failed to load location data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get current date for comparison
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Month names
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Day names
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Get days in month
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -115,7 +209,7 @@ export default function DateTimePicker() {
     setShowMobileModal(true);
   };
 
-  const handleMobileConfirm = () => {
+  const handleMobileConfirm = async () => {
     if (!mobileNumber.trim()) {
       Alert.alert('Please enter your mobile number');
       return;
@@ -127,9 +221,66 @@ export default function DateTimePicker() {
       return;
     }
 
-    // Close modal and navigate to next screen
-    setShowMobileModal(false);
-    router.push('/dashboard/tabs/soilManagement/RequestSuccess')
+    if (!selectedDate || !selectedLocation) {
+      Alert.alert('Error', 'Missing required information');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Format the date for the API
+      const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+      // Prepare the request data
+      const requestData = {
+        soil_collection_center_id: selectedLocation.id,
+        preferred_date: formattedDate,
+        preferred_time_slot: null, // You can add time slot selection later
+        farmer_phone: mobileNumber.trim(),
+        farmer_location_address: null, // You can add farmer location later
+        farmer_latitude: null,
+        farmer_longitude: null,
+        additional_notes: null
+      };
+
+      console.log('usertoken:', requestData);
+
+      // Make API call to create soil testing request
+      const response = await fetch('http://206.189.89.116:3000/api/v1/soil-testing-scheduling/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`,
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Close modal and navigate to success screen
+        setShowMobileModal(false);
+        setMobileNumber('');
+        router.push('/dashboard/tabs/soilManagement/RequestSuccess');
+      } else {
+        throw new Error(result.message || 'Failed to create soil testing request');
+      }
+
+    } catch (error) {
+      console.error('Error creating soil testing request:', error);
+      Alert.alert(
+        'Error', 
+        error instanceof Error ? error.message : 'Failed to submit request. Please try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleMobileCancel = () => {
@@ -155,10 +306,61 @@ export default function DateTimePicker() {
     return `${day} ${month} ${year}`;
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={24} color="#666" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Date & Time</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6BCF7F" />
+          <Text style={styles.loadingText}>Loading location details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show error state
+  if (error || !selectedLocation) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={24} color="#666" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Date & Time</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
+          <Text style={styles.errorText}>{error || 'Location data not available'}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={fetchLocationData}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const days = getDaysInMonth(currentMonth);
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* ...existing header code... */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton} 
@@ -171,13 +373,15 @@ export default function DateTimePicker() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.titleSection}>
-          <Text style={styles.mainTitle}>Schedule Your Soil Testing Service</Text>
-          <Text style={styles.subtitle}>
-            Pick the most convenient date and time slot for your soil sample collection.
-          </Text>
+        <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
+          <View style={styles.titleSection}>
+            <Text style={styles.mainTitle}>Schedule Your Soil Testing Service</Text>
+            <Text style={styles.subtitle}>
+              Pick the most convenient date and time slot for your soil sample collection.
+            </Text>
         </View>
 
+        {/* ...existing calendar code... */}
         <View style={styles.calendarContainer}>
           {/* Month Navigation */}
           <View style={styles.monthHeader}>
@@ -234,11 +438,19 @@ export default function DateTimePicker() {
           </View>
         </View>
 
-        {/* Selection Summary */}
+        {/* Updated Selection Summary with actual location data */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Selected Location -</Text>
-            <Text style={styles.summaryValue}>{selectedLocation}</Text>
+            <Text style={styles.summaryValue}>{selectedLocation.name}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Address -</Text>
+            <Text style={styles.summaryValue}>{selectedLocation.address}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Contact -</Text>
+            <Text style={styles.summaryValue}>{selectedLocation.contact_number}</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Selected Date -</Text>
@@ -247,29 +459,30 @@ export default function DateTimePicker() {
             </Text>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Bottom Buttons */}
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[
-            styles.setDetailsButton,
-            !selectedDate && styles.disabledButton
-          ]} 
-          onPress={handleSetDetails}
-          disabled={!selectedDate}
-        >
-          <Text style={styles.setDetailsButtonText}>Set Your Details</Text>
-          <Ionicons name="arrow-forward" size={20} color="white" style={styles.arrowIcon} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.cancelButton} 
-          onPress={handleCancel}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
+        {/* ...footer and modal code... */}
+        <View style={styles.footer}>
+          <TouchableOpacity 
+            style={[
+              styles.setDetailsButton,
+              !selectedDate && styles.disabledButton
+            ]} 
+            onPress={handleSetDetails}
+            disabled={!selectedDate}
+          >
+            <Text style={styles.setDetailsButtonText}>Set Your Details</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" style={styles.arrowIcon} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={handleCancel}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
       {/* Mobile Number Modal */}
       <Modal
@@ -290,18 +503,31 @@ export default function DateTimePicker() {
               placeholderTextColor="#999"
               keyboardType="phone-pad"
               maxLength={15}
+              editable={!submitting}
             />
             
             <TouchableOpacity 
-              style={styles.confirmButton} 
+              style={[
+                styles.confirmButton,
+                submitting && styles.disabledButton
+              ]} 
               onPress={handleMobileConfirm}
+              disabled={submitting}
             >
-              <Text style={styles.confirmButtonText}>Confirm</Text>
+              {submitting ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="white" />
+                  <Text style={styles.confirmButtonText}>Submitting...</Text>
+                </View>
+              ) : (
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              )}
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.modalCancelButton} 
               onPress={handleMobileCancel}
+              disabled={submitting}
             >
               <Text style={styles.modalCancelButtonText}>Cancel</Text>
             </TouchableOpacity>
@@ -530,6 +756,42 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     marginLeft: 4,
+  },
+  // Loading and error states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#6BCF7F',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   // Modal Styles
   modalOverlay: {
