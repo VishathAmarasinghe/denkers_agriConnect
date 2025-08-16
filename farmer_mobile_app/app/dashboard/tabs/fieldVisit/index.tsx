@@ -519,6 +519,9 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: '700', color: GREEN, marginBottom: 12, textAlign: 'center' },
   fieldLabel: { fontSize: 14, fontWeight: '600', color: GREEN, marginBottom: 6 },
   choiceRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  // Inline field errors
+  errorInput: { borderColor: '#DC2626' },
+  errorText: { color: '#DC2626', fontSize: 12, marginTop: -6, marginBottom: 8 },
   // Confirmation
   confirmCard: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 24 },
   checkCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: GREEN_LIGHTER, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
@@ -551,17 +554,109 @@ const ContactFormInline: React.FC<{ onSubmit: (payload: ContactPayload) => void 
   const [issues, setIssues] = React.useState<string[]>([]);
   const [urgency, setUrgency] = React.useState('standard');
 
-  const toggleIssue = (val: string) => {
-    setIssues(prev => (prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val]));
+  // Validation state
+  const [touched, setTouched] = React.useState<{ name: boolean; mobile: boolean; address: boolean; issues: boolean }>({ name: false, mobile: false, address: false, issues: false });
+  const [errors, setErrors] = React.useState<{ name?: string; mobile?: string; address?: string; issues?: string }>({});
+
+  const validateName = (v: string) => {
+    const value = v.trim();
+    if (!value) return 'Name is required';
+    if (value.length < 2) return 'Name must be at least 2 characters';
+    return '';
   };
-  const canSubmit = name.trim() && mobile.trim();
+  const validateMobile = (v: string) => {
+    const value = v.replace(/\s+/g, '');
+    if (!value) return 'Mobile number is required';
+    if (!/^\+?[0-9]{10}$/.test(value)) return 'Enter a valid mobile number (10 digits)';
+    return '';
+  };
+  // Address optional; only warn if provided but too short
+  const validateAddress = (v: string) => {
+    const value = v.trim();
+    if (!value) return '';
+    if (value.length < 5) return 'Address must be at least 5 characters';
+    return '';
+  };
+  const validateIssues = (arr: string[]) => {
+    if (!arr || arr.length === 0) return 'Select at least one issue';
+    return '';
+  };
+
+  const runValidation = (opts?: { touchAll?: boolean }) => {
+    const nextErrors = {
+      name: validateName(name),
+      mobile: validateMobile(mobile),
+      address: validateAddress(address),
+      issues: validateIssues(issues),
+    };
+    setErrors(nextErrors);
+    if (opts?.touchAll) setTouched({ name: true, mobile: true, address: true, issues: true });
+    const isValid = !nextErrors.name && !nextErrors.mobile && !nextErrors.issues; // address not required
+    return isValid;
+  };
+
+  const toggleIssue = (val: string) => {
+    setIssues(prev => {
+      const next = prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val];
+      if (touched.issues) setErrors(e => ({ ...e, issues: validateIssues(next) }));
+      return next;
+    });
+  };
+  const canSubmit = React.useMemo(() => {
+    const nameErr = validateName(name);
+    const mobileErr = validateMobile(mobile);
+    const issuesErr = validateIssues(issues);
+    return !nameErr && !mobileErr && !issuesErr;
+  }, [name, mobile, issues]);
   return (
     <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false}>
       <View style={styles.formCard}>
         <Text style={styles.sectionTitle}>Contact Expert</Text>
-        <TextInput placeholder="Your Name" style={inputStyle} value={name} onChangeText={setName} />
-        <TextInput placeholder="Mobile Number" keyboardType="phone-pad" style={inputStyle} value={mobile} onChangeText={setMobile} />
-        <TextInput placeholder="Address" style={inputStyle} value={address} onChangeText={setAddress} />
+        <TextInput
+          placeholder="Your Name"
+          style={[inputStyle, touched.name && errors.name ? styles.errorInput : null]}
+          value={name}
+          onChangeText={(t) => {
+            setName(t);
+            if (touched.name) setErrors(e => ({ ...e, name: validateName(t) }));
+          }}
+          onBlur={() => {
+            setTouched(prev => ({ ...prev, name: true }));
+            setErrors(e => ({ ...e, name: validateName(name) }));
+          }}
+        />
+        {touched.name && errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+
+        <TextInput
+          placeholder="Mobile Number"
+          keyboardType="phone-pad"
+          style={[inputStyle, touched.mobile && errors.mobile ? styles.errorInput : null]}
+          value={mobile}
+          onChangeText={(t) => {
+            setMobile(t);
+            if (touched.mobile) setErrors(e => ({ ...e, mobile: validateMobile(t) }));
+          }}
+          onBlur={() => {
+            setTouched(prev => ({ ...prev, mobile: true }));
+            setErrors(e => ({ ...e, mobile: validateMobile(mobile) }));
+          }}
+        />
+        {touched.mobile && errors.mobile ? <Text style={styles.errorText}>{errors.mobile}</Text> : null}
+
+        <TextInput
+          placeholder="Address (optional)"
+          style={[inputStyle, touched.address && errors.address ? styles.errorInput : null]}
+          value={address}
+          onChangeText={(t) => {
+            setAddress(t);
+            if (touched.address) setErrors(e => ({ ...e, address: validateAddress(t) }));
+          }}
+          onBlur={() => {
+            setTouched(prev => ({ ...prev, address: true }));
+            setErrors(e => ({ ...e, address: validateAddress(address) }));
+          }}
+        />
+        {touched.address && errors.address ? <Text style={styles.errorText}>{errors.address}</Text> : null}
         <Text style={styles.fieldLabel}>What issues are you facing?</Text>
         {ISSUE_OPTIONS.map(opt => (
           <FormCheckbox
@@ -572,6 +667,7 @@ const ContactFormInline: React.FC<{ onSubmit: (payload: ContactPayload) => void 
             style={styles.choiceRow}
           />
         ))}
+        {touched.issues && errors.issues ? <Text style={styles.errorText}>{errors.issues}</Text> : null}
         <Text style={[styles.fieldLabel, { marginTop: 12 }]}>How urgent is this issue?</Text>
         {URGENCY_OPTIONS.map(opt => (
           <FormRadio
@@ -585,7 +681,11 @@ const ContactFormInline: React.FC<{ onSubmit: (payload: ContactPayload) => void 
         <Button
           label="Submit"
           disabled={!canSubmit}
-          onPress={() => onSubmit({ name, mobile, address, issues, urgency })}
+          onPress={() => {
+            const ok = runValidation({ touchAll: true });
+            if (!ok) return;
+            onSubmit({ name: name.trim(), mobile: mobile.replace(/\s+/g, ''), address: address.trim(), issues, urgency });
+          }}
         />
       </View>
     </ScrollView>
