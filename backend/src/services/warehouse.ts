@@ -1,4 +1,5 @@
 import WarehouseModel from '../models/Warehouse';
+import WarehouseCategoryModel from '../models/WarehouseCategory';
 import WarehouseImageModel from '../models/WarehouseImage';
 import WarehouseInventoryModel from '../models/WarehouseInventory';
 import WarehouseAvailabilityModel from '../models/WarehouseAvailability';
@@ -662,6 +663,79 @@ class WarehouseService {
    */
   static async getAvailabilitySummary(warehouseId: number, startDate: Date, endDate: Date) {
     return await WarehouseAvailabilityModel.getAvailabilitySummary(warehouseId, startDate, endDate);
+  }
+
+  // Warehouse Category Methods
+  /**
+   * Create a new warehouse category
+   */
+  static async createWarehouseCategory(data: { name: string; description?: string }): Promise<number> {
+    // Check if category name already exists
+    const nameExists = await WarehouseCategoryModel.nameExists(data.name);
+    if (nameExists) {
+      throw new Error('Category name already exists');
+    }
+
+    return await WarehouseCategoryModel.create(data);
+  }
+
+  /**
+   * Get all warehouse categories
+   */
+  static async getAllWarehouseCategories() {
+    return await WarehouseCategoryModel.findAll();
+  }
+
+  /**
+   * Get warehouse category by ID
+   */
+  static async getWarehouseCategory(id: number) {
+    const category = await WarehouseCategoryModel.findById(id);
+    if (!category) {
+      throw new Error('Warehouse category not found');
+    }
+    return category;
+  }
+
+  /**
+   * Update warehouse category
+   */
+  static async updateWarehouseCategory(id: number, data: { name?: string; description?: string }): Promise<boolean> {
+    // Check if category exists
+    const existingCategory = await WarehouseCategoryModel.findById(id);
+    if (!existingCategory) {
+      throw new Error('Warehouse category not found');
+    }
+
+    // Check if name already exists (if name is being updated)
+    if (data.name && data.name !== existingCategory.name) {
+      const nameExists = await WarehouseCategoryModel.nameExists(data.name, id);
+      if (nameExists) {
+        throw new Error('Category name already exists');
+      }
+    }
+
+    return await WarehouseCategoryModel.update(id, data);
+  }
+
+  /**
+   * Delete warehouse category
+   */
+  static async deleteWarehouseCategory(id: number): Promise<boolean> {
+    // Check if category exists
+    const existingCategory = await WarehouseCategoryModel.findById(id);
+    if (!existingCategory) {
+      throw new Error('Warehouse category not found');
+    }
+
+    return await WarehouseCategoryModel.delete(id);
+  }
+
+  /**
+   * Get warehouse categories with warehouse count
+   */
+  static async getWarehouseCategoriesWithCount() {
+    return await WarehouseCategoryModel.getWithWarehouseCount();
   }
 }
 
