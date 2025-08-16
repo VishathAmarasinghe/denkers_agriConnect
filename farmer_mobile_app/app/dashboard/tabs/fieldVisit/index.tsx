@@ -38,17 +38,17 @@ type Officer = {
   id: number;
   name: string;
   designation: string;
-  specialization: 'general_support' | 'pest_control' | 'fertilizer_guidance';
+  specialization: 'general_support' | 'pest_control' | 'fertilizer_guidance' | 'extension_services' | 'crop_management';
   center: string;
   phone_no: string;
   description?: string;
 };
 
-// Map UI category to backend specialization
-const CATEGORY_TO_SPEC: Record<CategoryKey, Officer['specialization']> = {
-  'General Support': 'general_support',
-  'Pest Control': 'pest_control',
-  'Fertilizer Guidance': 'fertilizer_guidance',
+// Map UI category to a list of backend specializations (handles near matches)
+const CATEGORY_TO_SPECS: Record<CategoryKey, Officer['specialization'][]> = {
+  'General Support': ['general_support', 'extension_services', 'crop_management'],
+  'Pest Control': ['pest_control'],
+  'Fertilizer Guidance': ['fertilizer_guidance', 'crop_management'],
 };
 
 // Screen State Enum
@@ -96,13 +96,16 @@ const FieldVisitScreen: React.FC = () => {
   const fetchOfficers = async (reset = false) => {
     try {
       setLoading(true);
-  const spec = CATEGORY_TO_SPEC[category];
-  const params = { page: reset ? 1 : page, limit: 10, specialization: spec } as any;
+  const specs = CATEGORY_TO_SPECS[category];
+  const params: any = { page: reset ? 1 : page, limit: 10 };
+  // If category maps to a single specialization, filter server-side; otherwise fetch broad and filter client-side
+  if (specs.length === 1) params.specialization = specs[0];
   const url = AppConfig.apiEndpoints.fieldVisitors;
   const res = await APIService.getInstance().get(url, { params });
   const list: Officer[] = Array.isArray(res.data?.data) ? res.data.data : [];
+  const filtered: Officer[] = list.filter((o) => CATEGORY_TO_SPECS[category].includes(o.specialization));
   const pg = res.data?.pagination;
-      setOfficers(prev => (reset ? list : [...prev, ...list]));
+  setOfficers(prev => (reset ? filtered : [...prev, ...filtered]));
       setTotalPages(pg?.totalPages || 1);
       if (reset) setPage(1);
     } catch (e: any) {
