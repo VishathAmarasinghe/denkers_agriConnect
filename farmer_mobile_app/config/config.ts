@@ -25,6 +25,12 @@ export const AppConfig = {
     updateProfile: `${ServiceBaseUrl}/auth/update-profile`,
     uploadProfilePicture: `${ServiceBaseUrl}/auth/upload-profile-picture`,
     locations: `${ServiceBaseUrl}/auth/locations`,
-    warehouse: `${ServiceBaseUrl}/api/v1`,
+  // Harvest Hub endpoints
+  warehouses: `${ServiceBaseUrl}/warehouse`,
+  farmerWarehouseRequests: `${ServiceBaseUrl}/farmer-warehouse/requests`,
+  marketPrices: `${ServiceBaseUrl}/farmer-warehouse/market-prices`,
+  // Field Visit / Soil Testing Scheduling
+  fieldVisitors: `${ServiceBaseUrl}/soil-testing-scheduling/field-visitors`,
+  contactRequest: `${ServiceBaseUrl}/soil-testing-scheduling/contact-requests`,
   },
 };

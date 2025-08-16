@@ -16,14 +16,14 @@ const HomeScreen = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(state => state?.auth);
 
-  APIService.initialize(AppConfig.serviceUrls.authenticaion);
+  APIService.initialize(AppConfig.serviceUrls.authentication);
 
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
       if (storedToken) {
-        checkAuthToken(dispatch);
+        await dispatch(checkAuthToken());
       }
       setLoading(false);
     };
