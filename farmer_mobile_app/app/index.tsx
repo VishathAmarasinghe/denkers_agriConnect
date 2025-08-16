@@ -1,4 +1,4 @@
-import { AppConfig } from '@/config/config';
+import { AppConfig, ServiceBaseUrl } from '@/config/config';
 import { checkAuthToken } from '@/slice/authSlice/Auth';
 import { store, useAppDispatch, useAppSelector } from '@/slice/store';
 import { State } from '@/types/types';
@@ -16,7 +16,7 @@ const HomeScreen = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(state => state?.auth);
 
-  APIService.initialize(AppConfig.serviceUrls.authenticaion);
+  APIService.initialize(ServiceBaseUrl);
 
   useEffect(() => {
     const initializeAuth = async () => {
