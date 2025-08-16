@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { images } from '@/constants';
 import { APIService } from '@/utils/apiService';
-import { ServiceBaseUrl } from '@/config/config';
+import { AppConfig, ServiceBaseUrl } from '@/config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch } from '@/slice/store';
 import { showSnackbar } from '@/slice/snackbarSlice/snackbarSlice';
@@ -96,13 +96,12 @@ const FieldVisitScreen: React.FC = () => {
   const fetchOfficers = async (reset = false) => {
     try {
       setLoading(true);
-      const spec = CATEGORY_TO_SPEC[category];
-      const params = { page: reset ? 1 : page, limit: 10, specialization: spec } as any;
-      const url = `${ServiceBaseUrl}/api/v1/field-officers`;
-      const res = await APIService.getInstance().get(url, { params });
-      const payload = res.data?.data;
-      const list: Officer[] = payload?.data || [];
-      const pg = payload?.pagination;
+  const spec = CATEGORY_TO_SPEC[category];
+  const params = { page: reset ? 1 : page, limit: 10, specialization: spec } as any;
+  const url = AppConfig.apiEndpoints.fieldVisitors;
+  const res = await APIService.getInstance().get(url, { params });
+  const list: Officer[] = Array.isArray(res.data?.data) ? res.data.data : [];
+  const pg = res.data?.pagination;
       setOfficers(prev => (reset ? list : [...prev, ...list]));
       setTotalPages(pg?.totalPages || 1);
       if (reset) setPage(1);
@@ -212,7 +211,7 @@ const FieldVisitScreen: React.FC = () => {
                 onPress={async () => {
                   // Fetch details by id for description
                   try {
-                    const res = await APIService.getInstance().get(`${ServiceBaseUrl}/api/v1/field-officers/${item.id}`);
+                    const res = await APIService.getInstance().get(`${ServiceBaseUrl}/soil-testing-scheduling/field-visitors/${item.id}`);
                     const data: Officer = res.data?.data || item;
                     const mapped: Expert = {
                       id: String(data.id),
@@ -313,7 +312,9 @@ const FieldVisitScreen: React.FC = () => {
                   current_issues: payload.issues.join(', '),
                   urgency_level: urgency,
                 };
-                await APIService.getInstance().post(`${ServiceBaseUrl}/api/v1/field-officers/contact-requests`, body, {
+                // Prefer new namespace if backend exposes it, otherwise fallback to legacy path
+                const contactUrl = `${ServiceBaseUrl}/soil-testing-scheduling/contact-requests`;
+                await APIService.getInstance().post(contactUrl, body, {
                   headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 });
                 dispatch(showSnackbar({ message: 'Request submitted', type: 'success' }));
