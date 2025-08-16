@@ -1,15 +1,19 @@
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { ImageBackground, Pressable, ScrollView, Text, View, Dimensions } from 'react-native';
+import { ImageBackground, Pressable, ScrollView, Text, View, Dimensions, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { selectUserProfile } from '@/slice/authSlice/Auth';
+import { useWeather } from '@/hooks/useWeather';
+import weatherService from '@/utils/weatherService';
 
 export default function HomeScreen() {
   const router = useRouter();
   const userProfile = useSelector(selectUserProfile);
   const { height: screenHeight } = Dimensions.get('window');
   const contentBottomPadding = 140; // ensure visible above custom tab bar (100px + extra space)
+  
+  const { weatherData, locationData, loading, error, refreshWeather } = useWeather();
 
   const getUserGreeting = () => {
     const hour = new Date().getHours();
@@ -25,6 +29,24 @@ export default function HomeScreen() {
     return 'Farmer';
   };
 
+  const getLocationDisplayName = () => {
+    if (locationData?.cityName) {
+      return locationData.cityName;
+    }
+    return 'Current Location';
+  };
+
+  const getWeatherIcon = () => {
+    if (weatherData?.icon) {
+      return weatherService.getWeatherIcon(weatherData.icon);
+    }
+    return 'weather-partly-cloudy';
+  };
+
+  const getCurrentTime = () => {
+    return weatherService.formatTime();
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-transparent">
       <ImageBackground
@@ -37,12 +59,22 @@ export default function HomeScreen() {
             className="flex-1"
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: contentBottomPadding }}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={refreshWeather}
+                tintColor="#FFFFFF"
+                colors={["#FFFFFF"]}
+              />
+            }
           >
             {/* Location pill and settings button */}
             <View className="mt-4 flex-row items-center justify-between">
               <View className="flex-1 flex-row items-center rounded-3xl bg-gray-800/60 px-4 py-3" style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
                 <MaterialIcons name="location-on" size={18} color="#FFFFFF" />
-                <Text className="ml-2 text-sm font-semibold text-white">Galenbidunuwewa</Text>
+                <Text className="ml-2 text-sm font-semibold text-white">
+                  {loading ? 'Getting location...' : getLocationDisplayName()}
+                </Text>
               </View>
               <View className="ml-3">
                 {/* Settings Button */}
@@ -63,13 +95,23 @@ export default function HomeScreen() {
                 Hi, {getUserGreeting()} {getUserName()}!
               </Text>
               <View className="mt-4 flex-row items-start justify-between">
-                <Text className="text-6xl leading-none font-bold text-white">27°C</Text>
+                <Text className="text-6xl leading-none font-bold text-white">
+                  {loading ? '--°C' : `${weatherData?.temperature || '--'}°C`}
+                </Text>
                 <View className="items-end pt-1">
                   <View className="flex-row items-center">
-                    <MaterialCommunityIcons name="weather-partly-cloudy" size={24} color="#FFFFFF" />
-                    <Text className="ml-2 text-lg font-semibold text-white">Partly Cloudy</Text>
+                    <MaterialCommunityIcons 
+                      name={getWeatherIcon() as any} 
+                      size={24} 
+                      color="#FFFFFF" 
+                    />
+                    <Text className="ml-2 text-lg font-semibold text-white">
+                      {loading ? 'Loading...' : weatherData?.description || 'Weather'}
+                    </Text>
                   </View>
-                  <Text className="mt-1 text-sm font-medium text-white">11.30 AM | 9 Aug</Text>
+                  <Text className="mt-1 text-sm font-medium text-white">
+                    {getCurrentTime()}
+                  </Text>
                 </View>
               </View>
 
@@ -77,13 +119,30 @@ export default function HomeScreen() {
               <View className="mt-4 flex-row">
                 <View className="mr-3 flex-row items-center rounded-2xl bg-gray-700/60 px-3 py-2" style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
                   <MaterialCommunityIcons name="weather-windy" size={16} color="#FFFFFF" />
-                  <Text className="ml-2 text-xs font-medium text-white">2.4km/h</Text>
+                  <Text className="ml-2 text-xs font-medium text-white">
+                    {loading ? '--km/h' : `${weatherData?.windSpeed || '--'}km/h`}
+                  </Text>
                 </View>
                 <View className="flex-row items-center rounded-2xl bg-gray-700/60 px-3 py-2" style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
                   <MaterialCommunityIcons name="water-percent" size={16} color="#FFFFFF" />
-                  <Text className="ml-2 text-xs font-medium text-white">72.5%</Text>
+                  <Text className="ml-2 text-xs font-medium text-white">
+                    {loading ? '--%' : `${weatherData?.humidity || '--'}%`}
+                  </Text>
                 </View>
               </View>
+
+              {/* Error message */}
+              {error && (
+                <View className="mt-4 rounded-lg bg-red-500/20 p-3 border border-red-500/30">
+                  <Text className="text-sm text-red-200 text-center">{error}</Text>
+                  <Pressable 
+                    onPress={refreshWeather}
+                    className="mt-2 bg-red-500/30 rounded-lg py-2 px-4 self-center"
+                  >
+                    <Text className="text-red-200 text-sm font-medium">Retry</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
 
             {/* Action tiles grid */}
@@ -271,3 +330,4 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+

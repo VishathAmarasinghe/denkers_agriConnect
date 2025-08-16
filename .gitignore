@@ -8,10 +8,13 @@ ehthumbs.db
 Thumbs.db
 
 # Node.js
+node_modules/
 farmer_mobile_app/node_modules/
 farmer_mobile_app/npm-debug.log*
 farmer_mobile_app/yarn-debug.log*
 farmer_mobile_app/yarn-error.log*
+package-lock.json
+farmer_mobile_app/package-lock.json
 
 # Expo
 farmer_mobile_app/.expo/
