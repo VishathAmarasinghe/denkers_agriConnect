@@ -391,10 +391,10 @@ router.get('/field-visitors/available', async (req: Request, res: Response) => {
 
 /**
  * @route   GET /api/v1/soil-testing-field-visitors
- * @desc    Get all field visitors (Admin only)
- * @access  Private (Admin)
+ * @desc    Get all field visitors (Admin and Farmer)
+ * @access  Private (Admin, Farmer)
  */
-router.get('/field-visitors', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.get('/field-visitors', authenticateToken, async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;

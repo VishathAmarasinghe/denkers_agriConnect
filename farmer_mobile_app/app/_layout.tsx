@@ -11,6 +11,7 @@ import '../global.css';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 import Snackbar from '@/components/ui/Snackbar';
+import AuthWrapper from '@/components/AuthWrapper';
 import { store } from '@/slice/store';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -84,14 +85,16 @@ export default function RootLayout() {
         {/* Force PaperProvider to use customPaperTheme (light mode) */}
         <PaperProvider theme={customPaperTheme}>
           <Portal.Host>
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-              {/* <Stack.Screen name="tabs" options={{ headerShown: false }} />
-              <Stack.Screen name="client-tabs" options={{ headerShown: false }} /> */}
-              <Stack.Screen name="+not-found" />
-            </Stack>
+            <AuthWrapper>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="auth" options={{ headerShown: false }} />
+                <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+                {/* <Stack.Screen name="tabs" options={{ headerShown: false }} />
+                <Stack.Screen name="client-tabs" options={{ headerShown: false }} /> */}
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </AuthWrapper>
             <Snackbar />
           </Portal.Host>
           {/* Force status bar to light mode */}

@@ -1,10 +1,10 @@
 import express from 'express';
-import { body, validationResult } from 'express-validator';
+const { body, validationResult } = require('express-validator');
 import GoogleAuthService from '../services/googleAuth';
-import { ResponseService } from '../services/response';
+import ResponseService from '../services/response';
 
 const router = express.Router();
-const responseService = new ResponseService();
+const responseService = ResponseService;
 
 /**
  * @route POST /api/v1/auth/google
@@ -20,16 +20,16 @@ router.post(
       .isString()
       .withMessage('Google ID token must be a string'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return responseService.sendError(
+        return responseService.error(
           res,
           'Validation Error',
-          errors.array(),
-          400
+          400,
+          errors.array().map((err: any) => err.msg)
         );
       }
 
@@ -38,30 +38,29 @@ router.post(
       // Authenticate with Google
       const result = await GoogleAuthService.authenticateWithGoogle(idToken);
 
-      return responseService.sendSuccess(
+      return responseService.success(
         res,
-        'Google authentication successful',
         {
           user: {
             id: result.user.id,
             email: result.user.email,
             firstName: result.user.first_name,
             lastName: result.user.last_name,
-            profilePicture: result.user.profile_picture,
-            emailVerified: result.user.email_verified,
+            profilePicture: result.user.profile_image_url,
             createdAt: result.user.created_at,
           },
           accessToken: result.accessToken,
         },
+        'Google authentication successful',
         200
       );
     } catch (error: any) {
       console.error('Google authentication error:', error);
-      return responseService.sendError(
+      return responseService.error(
         res,
         'Authentication failed',
-        error.message,
-        401
+        401,
+        [error.message]
       );
     }
   }
@@ -81,16 +80,16 @@ router.post(
       .isString()
       .withMessage('Access token must be a string'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return responseService.sendError(
+        return responseService.error(
           res,
           'Validation Error',
-          errors.array(),
-          400
+          400,
+          errors.array().map((err: any) => err.msg)
         );
       }
 
@@ -99,19 +98,19 @@ router.post(
       // Get user profile from Google
       const profile = await GoogleAuthService.getUserProfile(accessToken);
 
-      return responseService.sendSuccess(
+      return responseService.success(
         res,
-        'Profile retrieved successfully',
         profile,
+        'Profile retrieved successfully',
         200
       );
     } catch (error: any) {
       console.error('Get profile error:', error);
-      return responseService.sendError(
+      return responseService.error(
         res,
         'Failed to get profile',
-        error.message,
-        400
+        400,
+        [error.message]
       );
     }
   }
@@ -131,16 +130,16 @@ router.post(
       .isString()
       .withMessage('Access token must be a string'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return responseService.sendError(
+        return responseService.error(
           res,
           'Validation Error',
-          errors.array(),
-          400
+          400,
+          errors.array().map((err: any) => err.msg)
         );
       }
 
@@ -149,19 +148,19 @@ router.post(
       // Revoke Google access
       await GoogleAuthService.revokeAccess(accessToken);
 
-      return responseService.sendSuccess(
+      return responseService.success(
         res,
-        'Google access revoked successfully',
         null,
+        'Google access revoked successfully',
         200
       );
     } catch (error: any) {
       console.error('Revoke access error:', error);
-      return responseService.sendError(
+      return responseService.error(
         res,
         'Failed to revoke access',
-        error.message,
-        400
+        400,
+        [error.message]
       );
     }
   }
