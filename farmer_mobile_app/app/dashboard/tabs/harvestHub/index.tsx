@@ -129,7 +129,7 @@ const INVENTORIES: Inventory[] = [
   },
 ];
 
-// Market prices section removed
+// Market Prices dataset and types
 type Price = { id: string; product: string; price: string; change: number };
 const MARKET_PRICES: Price[] = [
   { id: 'p1', product: 'Basmathi Rice', price: 'Rs. 120.00 (per kg)', change: +3.50 },
@@ -661,10 +661,10 @@ const HarvestHubScreen: React.FC = () => {
     case Screen.Warehouses: content = Warehouses; break;
     case Screen.WarehouseDetail: content = WarehouseDetail; break;
     case Screen.Inventory: content = InventoryList; break;
-  case Screen.MarketPrices: content = MarketPrices; break;
-  case Screen.SlotCalendar: content = SlotCalendar; break;
-  case Screen.BookingForm: content = null; break; // legacy route unused
-  case Screen.BookingConfirmation: content = null; break; // legacy route unused
+    case Screen.MarketPrices: content = MarketPrices; break;
+    case Screen.SlotCalendar: content = SlotCalendar; break;
+    case Screen.BookingForm: content = null; break; // legacy route unused
+    case Screen.BookingConfirmation: content = null; break; // legacy route unused
   }
 
   return <View style={styles.screenRoot}>{content}</View>;
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
   slotDisabledPill: { backgroundColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
   slotDisabledText: { color: '#9CA3AF', fontWeight: '700', fontSize: 12 },
 
-  // Market styles removed
+  // Market styles
 
   // Calendar
   calendarWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
