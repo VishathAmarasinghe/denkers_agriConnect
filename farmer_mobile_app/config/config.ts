@@ -22,9 +22,13 @@ export const AppConfig = {
     uploadProfilePicture: `${ServiceBaseUrl}/auth/upload-profile-picture`,
     locations: `${ServiceBaseUrl}/auth/locations`,
 
-  // Harvest Hub endpoints
-  warehouses: `${ServiceBaseUrl}/warehouse`,
-  farmerWarehouseRequests: `${ServiceBaseUrl}/farmer-warehouse/requests`,
-  marketPrices: `${ServiceBaseUrl}/farmer-warehouse/market-prices`,
+    // Harvest Hub endpoints
+    warehouses: `${ServiceBaseUrl}/warehouse`,
+    farmerWarehouseRequests: `${ServiceBaseUrl}/farmer-warehouse/requests`,
+    marketPrices: `${ServiceBaseUrl}/farmer-warehouse/market-prices`,
+
+    fieldVisitors: `${ServiceBaseUrl}/soil-testing-scheduling/field-visitors`,
+    contactRequest: `${ServiceBaseUrl}/soil-testing-scheduling/contact-requests`,
+
   },
 };

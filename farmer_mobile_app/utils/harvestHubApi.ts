@@ -1,7 +1,7 @@
 import { APIService } from '@/utils/apiService';
 import { AppConfig, ServiceBaseUrl } from '@/config/config';
 
-// Initialize axios with the backend base (same pattern as AuthService)
+
 const ensureInit = () => {
   try {
     APIService.getInstance();
@@ -17,8 +17,10 @@ const requestAndHandle = async <T>(config: any): Promise<T> => {
   throw new Error(body?.message || 'API request failed');
 };
 
+
 // Keep existing function names for compatibility with screens
 export const fetchWarehouses = async (page = 1, limit = 10) => {
+
   ensureInit();
   try {
   const response = await requestAndHandle<any>({
@@ -43,6 +45,7 @@ export const fetchWarehouseById = async (id: number | string) => {
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || 'Failed to load warehouse');
   }
+
 };
 
 export const createStorageRequest = async (payload: {
@@ -53,6 +56,7 @@ export const createStorageRequest = async (payload: {
   storage_duration_days: number;
   storage_requirements?: string;
 }) => {
+
   ensureInit();
   try {
   const response = await requestAndHandle<any>({
@@ -77,4 +81,5 @@ export const fetchMarketPrices = async () => {
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || 'Failed to load market prices');
   }
+
 };

@@ -1,7 +1,12 @@
 // Officer Visit Services Flow Implementation
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ImageBackground, Animated, Image, ScrollView, TextInput, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { images } from '@/constants';
+import { APIService } from '@/utils/apiService';
+import { AppConfig, ServiceBaseUrl } from '@/config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppDispatch } from '@/slice/store';
+import { showSnackbar } from '@/slice/snackbarSlice/snackbarSlice';
 // (Temporarily using local types until extracted to shared location)
 
 // Generic UI components (reusable across app)
@@ -28,178 +33,23 @@ interface Expert {
 }
 const CATEGORIES: CategoryKey[] = ['General Support', 'Pest Control', 'Fertilizer Guidance'];
 
-// Static data (placeholder assets; content intentionally feature-specific here; UI components stay generic)
-const EXPERTS: Expert[] = [
-  {
-    id: 'exp-1',
-  name: 'දිනූෂි පෙරේරා',
-    role: 'General Support Officer',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5678',
-  officeLocation: 'District Office - Galle',
-    rating: 5,
-    description:
-      'Extension officer with 10+ years supporting smallholder farmers in crop planning, soil health, and sustainable practices.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-2',
-  name: 'සවිනී ගුණසේකර',
-    role: 'Pest Management Specialist',
-    category: 'Pest Control',
-    avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
-    phone: '071 234 5679',
-  officeLocation: 'Regional Agricenter - Matara',
-    rating: 4,
-    description:
-      'Specialist in integrated pest management and early detection strategies to reduce losses while protecting the environment.',
-    hours: 'Mon - Fri • 9:00 AM - 4:00 PM',
-  },
-  {
-    id: 'exp-3',
-  name: 'රොහිත ප්‍රනාන්දු',
-    role: 'Fertilizer & Soil Advisor',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5680',
-  officeLocation: 'Soil Lab Hub - Kandy',
-    rating: 5,
-    description:
-      'Guides farmers on balanced fertilizer application, soil testing interpretation, and long‑term soil fertility improvement.',
-    hours: 'Mon - Fri • 8:00 AM - 2:00 PM',
-  },
-  {
-    id: 'exp-4',
-  name: 'මාලිනී ජයසිංහ',
-    role: 'Pest Surveillance Officer',
-    category: 'Pest Control',
-    photo: images.appLogo,
-    phone: '071 234 5681',
-  officeLocation: 'Field Station - Hambantota',
-    rating: 4,
-    description:
-      'Monitors and advises on pest population trends and early warning actions for reduced crop damage.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-5',
-  name: 'ලසන්ත කුමාර',
-    role: 'Soil Sampling Technician',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5682',
-  officeLocation: 'Agri Service Point - Kurunegala',
-    rating: 3,
-    description:
-      'Collects and interprets soil test data to tailor nutrient programs and reduce input wastage.',
-    hours: 'Mon - Fri • 9:00 AM - 4:00 PM',
-  },
-  {
-    id: 'exp-6',
-  name: 'අමිලා දිසානායක',
-    role: 'Crop Rotation Advisor',
-    category: 'General Support',
-    avatarUrl: 'https://randomuser.me/api/portraits/women/65.jpg',
-    phone: '071 234 5683',
-  officeLocation: 'Extension Center - Anuradhapura',
-    rating: 5,
-    description:
-      'Helps design rotation plans improving soil structure, nutrient cycling, and long-term productivity.',
-    hours: 'Mon - Fri • 8:00 AM - 3:00 PM',
-  },
-  {
-    id: 'exp-7',
-  name: 'චාමර වීරසිංහ',
-    role: 'Biological Control Specialist',
-    category: 'Pest Control',
-    photo: images.appLogo,
-    phone: '071 234 5684',
-  officeLocation: 'Pest Monitoring Unit - Badulla',
-    rating: 5,
-    description:
-      'Advises on beneficial insects, microbial pesticides, and ecosystem-friendly suppression strategies.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-8',
-  name: 'ප්‍රියංකරී විජේසිංහ',
-    role: 'Nutrient Management Consultant',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5685',
-  officeLocation: 'Nutrient Advisory Desk - Polonnaruwa',
-    rating: 4,
-    description:
-      'Optimizes fertilizer scheduling and blending to match crop stages while minimizing leaching.',
-    hours: 'Mon - Fri • 9:00 AM - 4:30 PM',
-  },
-  {
-    id: 'exp-9',
-  name: 'සමන් මෙන්ඩිස්',
-    role: 'Farm Risk Assessor',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5686',
-  officeLocation: 'Risk Advisory Cell - Jaffna',
-    rating: 4,
-    description:
-      'Evaluates weather, pest, and market risks to guide contingency and resilience planning.',
-    hours: 'Mon - Fri • 8:00 AM - 3:30 PM',
-  },
-  {
-    id: 'exp-10',
-  name: 'ඇලීනා පෙරේරා',
-    role: 'Post-Harvest Handling Expert',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5687',
-  officeLocation: 'Post-Harvest Center - Colombo',
-    rating: 5,
-    description:
-      'Supports improved storage, grading, and transport practices to reduce post-harvest losses.',
-    hours: 'Mon - Fri • 8:30 AM - 3:00 PM',
-  },
-  {
-    id: 'exp-11',
-  name: 'ඉබ්‍රාහිම් කාරිම්',
-    role: 'Weed Management Specialist',
-    category: 'Pest Control',
-    photo: images.appLogo,
-    phone: '071 234 5688',
-  officeLocation: 'Weed Control Section - Ratnapura',
-    rating: 3,
-    description:
-      'Designs integrated weed control programs balancing mechanical, cultural, and chemical tactics.',
-    hours: 'Mon - Fri • 9:00 AM - 4:00 PM',
-  },
-  {
-    id: 'exp-12',
-  name: 'ෆාතිමා නූර්',
-    role: 'Sustainable Inputs Advisor',
-    category: 'Fertilizer Guidance',
-    photo: images.appLogo,
-    phone: '071 234 5689',
-  officeLocation: 'Sustainable Inputs Hub - Monaragala',
-    rating: 5,
-    description:
-      'Guides adoption of biofertilizers and organic amendments to build long-term soil vitality.',
-    hours: 'Mon - Fri • 8:00 AM - 2:30 PM',
-  },
-  {
-    id: 'exp-13',
-  name: 'ජයන්ත රණසිංහ',
-    role: 'Irrigation & Water Use Officer',
-    category: 'General Support',
-    photo: images.appLogo,
-    phone: '071 234 5690',
-  officeLocation: 'Water Management Office - Trincomalee',
-    rating: 4,
-    description:
-      'Advises on efficient irrigation scheduling, water conservation, and system maintenance.',
-    hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
-  },
-];
+// Backend officer types
+type Officer = {
+  id: number;
+  name: string;
+  designation: string;
+  specialization: 'general_support' | 'pest_control' | 'fertilizer_guidance' | 'extension_services' | 'crop_management';
+  center: string;
+  phone_no: string;
+  description?: string;
+};
+
+// Map UI category to a list of backend specializations (handles near matches)
+const CATEGORY_TO_SPECS: Record<CategoryKey, Officer['specialization'][]> = {
+  'General Support': ['general_support', 'extension_services', 'crop_management'],
+  'Pest Control': ['pest_control'],
+  'Fertilizer Guidance': ['fertilizer_guidance', 'crop_management'],
+};
 
 // Screen State Enum
 enum Screen {
@@ -218,6 +68,7 @@ export const options = {
 };
 
 const FieldVisitScreen: React.FC = () => {
+  const dispatch = useAppDispatch();
   // Navigation stack to emulate auth (expo-router) push/pop slide transitions
   const [stack, setStack] = useState<Screen[]>([Screen.Landing]);
   const screen = stack[stack.length - 1];
@@ -236,7 +87,41 @@ const FieldVisitScreen: React.FC = () => {
   const incomingOpacity = React.useRef(new Animated.Value(1)).current;
   const outgoingOpacity = React.useRef(new Animated.Value(0)).current;
 
-  const filteredExperts = useMemo(() => EXPERTS.filter(e => e.category === category), [category]);
+  // Data state from backend
+  const [officers, setOfficers] = useState<Officer[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const fetchOfficers = async (reset = false) => {
+    try {
+      setLoading(true);
+  const specs = CATEGORY_TO_SPECS[category];
+  const params: any = { page: reset ? 1 : page, limit: 10 };
+  // If category maps to a single specialization, filter server-side; otherwise fetch broad and filter client-side
+  if (specs.length === 1) params.specialization = specs[0];
+  const url = AppConfig.apiEndpoints.fieldVisitors;
+  const res = await APIService.getInstance().get(url, { params });
+  const list: Officer[] = Array.isArray(res.data?.data) ? res.data.data : [];
+  const filtered: Officer[] = list.filter((o) => CATEGORY_TO_SPECS[category].includes(o.specialization));
+  const pg = res.data?.pagination;
+  setOfficers(prev => (reset ? filtered : [...prev, ...filtered]));
+      setTotalPages(pg?.totalPages || 1);
+      if (reset) setPage(1);
+    } catch (e: any) {
+      dispatch(showSnackbar({ message: 'Failed to load officers', type: 'error' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // refetch on category change or when entering the list screen
+  React.useEffect(() => {
+    if (screen === Screen.ExpertsTabbed) {
+      fetchOfficers(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, screen]);
 
   // Navigation helpers mimicking push/pop
   const push = (next: Screen) => {
@@ -319,31 +204,70 @@ const FieldVisitScreen: React.FC = () => {
             })}
           </View>
           <FlatList
-            data={filteredExperts}
-            keyExtractor={it => it.id}
+            data={officers}
+            keyExtractor={it => String(it.id)}
             contentContainerStyle={styles.listPad}
             renderItem={({ item }) => (
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.expertCard}
-                onPress={() => { setSelected(item); push(Screen.Profile); }}
+                onPress={async () => {
+                  // Fetch details by id for description
+                  try {
+                    const res = await APIService.getInstance().get(`${AppConfig.apiEndpoints.fieldVisitors}/${item.id}`);
+                    const data: Officer = res.data?.data || item;
+                    const mapped: Expert = {
+                      id: String(data.id),
+                      name: data.name,
+                      role: data.designation,
+                      category,
+                      phone: data.phone_no,
+                      officeLocation: data.center,
+                      rating: 4,
+                      description: data.description || '',
+                      hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
+                    };
+                    setSelected(mapped);
+                  } catch {
+                    const fallback: Expert = {
+                      id: String(item.id),
+                      name: item.name,
+                      role: item.designation,
+                      category,
+                      phone: item.phone_no,
+                      officeLocation: item.center,
+                      rating: 4,
+                      description: '',
+                      hours: 'Mon - Fri • 8:30 AM - 3:30 PM',
+                    };
+                    setSelected(fallback);
+                  }
+                  push(Screen.Profile);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`View profile of ${item.name}`}
               >
-                <Image source={item.avatarUrl ? { uri: item.avatarUrl } : (item.photo || images.appLogo)} style={styles.expertAvatar} />
+                <Image source={images.appLogo} style={styles.expertAvatar} />
                 <View style={styles.expertBody}>
                   <Text style={styles.expertName}>{item.name}</Text>
-                  <Text style={styles.expertRole}>{item.role}</Text>
+                  <Text style={styles.expertRole}>{item.designation}</Text>
                   <View style={styles.inlineRow}>
                     <View style={styles.phoneRow}>
                       <Text style={styles.iconText}>📞</Text>
-                      <Text style={styles.metaText}>{item.phone}</Text>
+                      <Text style={styles.metaText}>{item.phone_no}</Text>
                     </View>
-                    <StarRating value={item.rating} />
+                    <StarRating value={4} />
                   </View>
                 </View>
               </TouchableOpacity>
             )}
+            ListFooterComponent={loading ? <ActivityIndicator style={{ padding: 12 }} /> : null}
+            onEndReachedThreshold={0.5}
+            onEndReached={() => {
+              if (!loading && page < totalPages) {
+                setPage(p => p + 1);
+              }
+            }}
           />
         </View>
       );
@@ -377,7 +301,32 @@ const FieldVisitScreen: React.FC = () => {
       content = (
         <View style={styles.flex}>
           <Header title="Contact" onBack={() => pop()} />
-          <ContactFormInline onSubmit={() => push(Screen.Confirmation)} />
+          <ContactFormInline
+            onSubmit={async (payload) => {
+              try {
+                const token = await AsyncStorage.getItem('token');
+                if (!selected) throw new Error('No officer selected');
+                const urgency = payload.urgency === 'emergency' ? 'high' : payload.urgency === 'standard' ? 'medium' : 'low';
+                const body = {
+                  field_officer_id: Number(selected.id),
+                  farmer_name: payload.name,
+                  farmer_mobile: payload.mobile,
+                  farmer_address: payload.address,
+                  current_issues: payload.issues.join(', '),
+                  urgency_level: urgency,
+                };
+                // Prefer new namespace if backend exposes it, otherwise fallback to legacy path
+                const contactUrl = AppConfig.apiEndpoints.contactRequest;
+                await APIService.getInstance().post(contactUrl, body, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                });
+                dispatch(showSnackbar({ message: 'Request submitted', type: 'success' }));
+                push(Screen.Confirmation);
+              } catch (e: any) {
+                dispatch(showSnackbar({ message: 'Failed to submit request', type: 'error' }));
+              }
+            }}
+          />
         </View>
       );
       break;
@@ -574,6 +523,9 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: '700', color: GREEN, marginBottom: 12, textAlign: 'center' },
   fieldLabel: { fontSize: 14, fontWeight: '600', color: GREEN, marginBottom: 6 },
   choiceRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  // Inline field errors
+  errorInput: { borderColor: '#DC2626' },
+  errorText: { color: '#DC2626', fontSize: 12, marginTop: -6, marginBottom: 8 },
   // Confirmation
   confirmCard: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 24 },
   checkCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: GREEN_LIGHTER, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
@@ -598,24 +550,117 @@ const URGENCY_OPTIONS = [
   { value: 'planning', label: 'Planning (Future guidance)' },
 ];
 
-const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
+type ContactPayload = { name: string; mobile: string; address: string; issues: string[]; urgency: string };
+const ContactFormInline: React.FC<{ onSubmit: (payload: ContactPayload) => void }> = ({ onSubmit }) => {
   const [name, setName] = React.useState('');
   const [mobile, setMobile] = React.useState('');
   const [address, setAddress] = React.useState('');
   const [issues, setIssues] = React.useState<string[]>([]);
   const [urgency, setUrgency] = React.useState('standard');
 
-  const toggleIssue = (val: string) => {
-    setIssues(prev => (prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val]));
+  // Validation state
+  const [touched, setTouched] = React.useState<{ name: boolean; mobile: boolean; address: boolean; issues: boolean }>({ name: false, mobile: false, address: false, issues: false });
+  const [errors, setErrors] = React.useState<{ name?: string; mobile?: string; address?: string; issues?: string }>({});
+
+  const validateName = (v: string) => {
+    const value = v.trim();
+    if (!value) return 'Name is required';
+    if (value.length < 2) return 'Name must be at least 2 characters';
+    return '';
   };
-  const canSubmit = name.trim() && mobile.trim();
+  const validateMobile = (v: string) => {
+    const value = v.replace(/\s+/g, '');
+    if (!value) return 'Mobile number is required';
+  if (!/^\+?[0-9]{10,15}$/.test(value)) return 'Enter a valid mobile number (10-15 digits, may start with +)';
+    return '';
+  };
+  // Address optional; only warn if provided but too short
+  const validateAddress = (v: string) => {
+    const value = v.trim();
+    if (!value) return '';
+    if (value.length < 5) return 'Address must be at least 5 characters';
+    return '';
+  };
+  const validateIssues = (arr: string[]) => {
+    if (!arr || arr.length === 0) return 'Select at least one issue';
+    return '';
+  };
+
+  const runValidation = (opts?: { touchAll?: boolean }) => {
+    const nextErrors = {
+      name: validateName(name),
+      mobile: validateMobile(mobile),
+      address: validateAddress(address),
+      issues: validateIssues(issues),
+    };
+    setErrors(nextErrors);
+    if (opts?.touchAll) setTouched({ name: true, mobile: true, address: true, issues: true });
+    const isValid = !nextErrors.name && !nextErrors.mobile && !nextErrors.issues; // address not required
+    return isValid;
+  };
+
+  const toggleIssue = (val: string) => {
+    setIssues(prev => {
+      const next = prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val];
+      if (touched.issues) setErrors(e => ({ ...e, issues: validateIssues(next) }));
+      return next;
+    });
+  };
+  const canSubmit = React.useMemo(() => {
+    const nameErr = validateName(name);
+    const mobileErr = validateMobile(mobile);
+    const issuesErr = validateIssues(issues);
+    return !nameErr && !mobileErr && !issuesErr;
+  }, [name, mobile, issues]);
   return (
     <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false}>
       <View style={styles.formCard}>
         <Text style={styles.sectionTitle}>Contact Expert</Text>
-        <TextInput placeholder="Your Name" style={inputStyle} value={name} onChangeText={setName} />
-        <TextInput placeholder="Mobile Number" keyboardType="phone-pad" style={inputStyle} value={mobile} onChangeText={setMobile} />
-        <TextInput placeholder="Address" style={inputStyle} value={address} onChangeText={setAddress} />
+        <TextInput
+          placeholder="Your Name"
+          style={[inputStyle, touched.name && errors.name ? styles.errorInput : null]}
+          value={name}
+          onChangeText={(t) => {
+            setName(t);
+            if (touched.name) setErrors(e => ({ ...e, name: validateName(t) }));
+          }}
+          onBlur={() => {
+            setTouched(prev => ({ ...prev, name: true }));
+            setErrors(e => ({ ...e, name: validateName(name) }));
+          }}
+        />
+        {touched.name && errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+
+        <TextInput
+          placeholder="Mobile Number"
+          keyboardType="phone-pad"
+          style={[inputStyle, touched.mobile && errors.mobile ? styles.errorInput : null]}
+          value={mobile}
+          onChangeText={(t) => {
+            setMobile(t);
+            if (touched.mobile) setErrors(e => ({ ...e, mobile: validateMobile(t) }));
+          }}
+          onBlur={() => {
+            setTouched(prev => ({ ...prev, mobile: true }));
+            setErrors(e => ({ ...e, mobile: validateMobile(mobile) }));
+          }}
+        />
+        {touched.mobile && errors.mobile ? <Text style={styles.errorText}>{errors.mobile}</Text> : null}
+
+        <TextInput
+          placeholder="Address (optional)"
+          style={[inputStyle, touched.address && errors.address ? styles.errorInput : null]}
+          value={address}
+          onChangeText={(t) => {
+            setAddress(t);
+            if (touched.address) setErrors(e => ({ ...e, address: validateAddress(t) }));
+          }}
+          onBlur={() => {
+            setTouched(prev => ({ ...prev, address: true }));
+            setErrors(e => ({ ...e, address: validateAddress(address) }));
+          }}
+        />
+        {touched.address && errors.address ? <Text style={styles.errorText}>{errors.address}</Text> : null}
         <Text style={styles.fieldLabel}>What issues are you facing?</Text>
         {ISSUE_OPTIONS.map(opt => (
           <FormCheckbox
@@ -626,6 +671,7 @@ const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => 
             style={styles.choiceRow}
           />
         ))}
+        {touched.issues && errors.issues ? <Text style={styles.errorText}>{errors.issues}</Text> : null}
         <Text style={[styles.fieldLabel, { marginTop: 12 }]}>How urgent is this issue?</Text>
         {URGENCY_OPTIONS.map(opt => (
           <FormRadio
@@ -636,7 +682,15 @@ const ContactFormInline: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => 
             style={styles.choiceRow}
           />
         ))}
-        <Button label="Submit" disabled={!canSubmit} onPress={onSubmit} />
+        <Button
+          label="Submit"
+          disabled={!canSubmit}
+          onPress={() => {
+            const ok = runValidation({ touchAll: true });
+            if (!ok) return;
+            onSubmit({ name: name.trim(), mobile: mobile.replace(/\s+/g, ''), address: address.trim(), issues, urgency });
+          }}
+        />
       </View>
     </ScrollView>
   );

@@ -1,47 +1,64 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, Text, ImageBackground, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, ImageBackground, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
+import { useMachineRental } from '@/hooks/useMachineRental';
+import { useEffect } from 'react';
 
 export default function EquipmentCategoryScreen() {
+  const {
+    categories,
+    categoriesLoading,
+    categoriesError,
+    fetchCategories
+  } = useMachineRental();
+
   const handleBack = () => {
     router.back();
   };
 
-  const handleCategoryPress = (categoryId: string, categoryName: string) => {
+  const handleCategoryPress = (categoryId: number, categoryName: string) => {
     // Navigate to machine listing screen with category info
     router.push({
       pathname: '/dashboard/tabs/machineRent/machineListing',
-      params: { categoryId, categoryName }
+      params: { categoryId: categoryId.toString(), categoryName }
     });
   };
 
-  const equipmentCategories = [
+  const handleRetry = () => {
+    fetchCategories();
+  };
+
+  // Fallback categories if API fails
+  const fallbackCategories = [
     {
-      id: '1',
+      id: 1,
       name: 'Tractors & Power\nEquipment',
       image: require('@/assets/images/eq_tractor.png'),
     },
     {
-      id: '2',
+      id: 2,
       name: 'Harvesting\nMachines',
       image: require('@/assets/images/eq_harvestor.png'),
     },
     {
-      id: '3',
+      id: 3,
       name: 'Planting & Seeding\nEquipment',
       image: require('@/assets/images/eq_planter.png'),
     },
     {
-      id: '4',
+      id: 4,
       name: 'Tillage &\nCultivation',
       image: require('@/assets/images/eq_tiller.png'),
     },
   ];
 
+  // Use API data if available, otherwise fallback to hardcoded data
+  const displayCategories = categories && categories.length > 0 ? categories : fallbackCategories;
+
   const renderEquipmentCard = (category: {
-    id: string;
+    id: number;
     name: string;
-    image: any;
+    image?: any;
   }) => (
     <TouchableOpacity 
       key={category.id}
@@ -60,7 +77,7 @@ export default function EquipmentCategoryScreen() {
     >
       {/* Equipment Image - Using ImageBackground instead of Image */}
       <ImageBackground
-        source={category.image}
+        source={category.image || require('@/assets/images/eq_tractor.png')}
         style={{ 
           width: 160, 
           height: 96, 
@@ -75,6 +92,31 @@ export default function EquipmentCategoryScreen() {
         {category.name}
       </Text>
     </TouchableOpacity>
+  );
+
+  const renderLoadingState = () => (
+    <View className="flex-1 items-center justify-center">
+      <ActivityIndicator size="large" color="#000" />
+      <Text className="text-base text-black mt-4">Loading equipment categories...</Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View className="flex-1 items-center justify-center px-6">
+      <MaterialIcons name="error-outline" size={64} color="#ef4444" />
+      <Text className="text-lg font-bold text-black text-center mt-4 mb-2">
+        Failed to Load Categories
+      </Text>
+      <Text className="text-base text-black text-center mb-6 leading-6">
+        {categoriesError || 'Unable to load equipment categories. Please check your internet connection and try again.'}
+      </Text>
+      <TouchableOpacity
+        className="bg-black px-6 py-3 rounded-lg"
+        onPress={handleRetry}
+      >
+        <Text className="text-white font-semibold">Retry</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -122,7 +164,13 @@ export default function EquipmentCategoryScreen() {
 
           {/* Equipment Category Cards */}
           <ScrollView className="flex-1 px-6 pb-6" showsVerticalScrollIndicator={false}>
-            {equipmentCategories.map(renderEquipmentCard)}
+            {categoriesLoading ? (
+              renderLoadingState()
+            ) : categoriesError ? (
+              renderErrorState()
+            ) : (
+              displayCategories.map(renderEquipmentCard)
+            )}
           </ScrollView>
         </View>
       </ImageBackground>
