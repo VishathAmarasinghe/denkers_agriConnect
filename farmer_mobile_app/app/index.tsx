@@ -43,7 +43,9 @@ const HomeScreen = () => {
 
   return (
     <Provider store={store}>
-      {token ? (
+      {__DEV__ ? (
+        <Redirect href="/dashboard/tabs/home" />
+      ) : token ? (
         auth?.status === State.success ? (
           <Redirect href="/dashboard/tabs/home" />
         ) : (

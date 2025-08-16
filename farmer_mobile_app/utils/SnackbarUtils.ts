@@ -1,21 +1,29 @@
-import Snackbar from 'react-native-snackbar';
+// Safe Snackbar wrapper to work in Expo Go (native module may be unavailable)
+let RNSnackbar: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  RNSnackbar = require('react-native-snackbar');
+} catch {}
 
-// Function to show a success snackbar
-export const showSuccessSnackbar = (message: string) => {
-  Snackbar.show({
-    text: message,
-    duration: Snackbar.LENGTH_SHORT, // Options: LENGTH_SHORT, LENGTH_LONG, LENGTH_INDEFINITE
-    backgroundColor: '#4CAF50', // Green for success
-    textColor: '#FFFFFF',
-  });
+const safeShow = (
+  message: string,
+  opts?: { backgroundColor?: string; textColor?: string; durationMs?: number }
+) => {
+  if (RNSnackbar && typeof RNSnackbar.show === 'function') {
+    RNSnackbar.show({
+      text: message,
+      duration: RNSnackbar.LENGTH_SHORT,
+      backgroundColor: opts?.backgroundColor ?? '#333',
+      textColor: opts?.textColor ?? '#FFF',
+    });
+  } else {
+    // Fallback: log to console to avoid crashes in Expo Go
+    console.log('[Snackbar]', message);
+  }
 };
 
-// Function to show an error snackbar
-export const showErrorSnackbar = (message: string) => {
-  Snackbar.show({
-    text: message,
-    duration: Snackbar.LENGTH_SHORT,
-    backgroundColor: '#F44336', // Red for errors
-    textColor: '#FFFFFF',
-  });
-};
+export const showSuccessSnackbar = (message: string) =>
+  safeShow(message, { backgroundColor: '#4CAF50', textColor: '#FFFFFF' });
+
+export const showErrorSnackbar = (message: string) =>
+  safeShow(message, { backgroundColor: '#F44336', textColor: '#FFFFFF' });
