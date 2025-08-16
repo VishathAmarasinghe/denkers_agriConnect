@@ -31,5 +31,6 @@ export const AppConfig = {
   marketPrices: `${ServiceBaseUrl}/farmer-warehouse/market-prices`,
   // Field Visit / Soil Testing Scheduling
   fieldVisitors: `${ServiceBaseUrl}/soil-testing-scheduling/field-visitors`,
+  contactRequest: `${ServiceBaseUrl}/soil-testing-scheduling/contact-requests`,
   },
 };

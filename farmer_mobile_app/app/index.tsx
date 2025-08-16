@@ -23,7 +23,7 @@ const HomeScreen = () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
       if (storedToken) {
-        dispatch(checkAuthToken());
+        await dispatch(checkAuthToken());
       }
       setLoading(false);
     };

@@ -214,7 +214,7 @@ const FieldVisitScreen: React.FC = () => {
                 onPress={async () => {
                   // Fetch details by id for description
                   try {
-                    const res = await APIService.getInstance().get(`${ServiceBaseUrl}/soil-testing-scheduling/field-visitors/${item.id}`);
+                    const res = await APIService.getInstance().get(`${AppConfig.apiEndpoints.fieldVisitors}/${item.id}`);
                     const data: Officer = res.data?.data || item;
                     const mapped: Expert = {
                       id: String(data.id),
@@ -316,7 +316,7 @@ const FieldVisitScreen: React.FC = () => {
                   urgency_level: urgency,
                 };
                 // Prefer new namespace if backend exposes it, otherwise fallback to legacy path
-                const contactUrl = `${ServiceBaseUrl}/soil-testing-scheduling/contact-requests`;
+                const contactUrl = AppConfig.apiEndpoints.contactRequest;
                 await APIService.getInstance().post(contactUrl, body, {
                   headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 });
@@ -571,7 +571,7 @@ const ContactFormInline: React.FC<{ onSubmit: (payload: ContactPayload) => void 
   const validateMobile = (v: string) => {
     const value = v.replace(/\s+/g, '');
     if (!value) return 'Mobile number is required';
-    if (!/^\+?[0-9]{10}$/.test(value)) return 'Enter a valid mobile number (10 digits)';
+  if (!/^\+?[0-9]{10,15}$/.test(value)) return 'Enter a valid mobile number (10-15 digits, may start with +)';
     return '';
   };
   // Address optional; only warn if provided but too short
