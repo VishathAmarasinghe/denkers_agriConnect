@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#27ae60',
+    color: '#52B788',
     textAlign: 'center',
   },
   description: {
@@ -114,12 +114,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#6BCF7F',
+    backgroundColor: '#52B788',
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#6BCF7F',
+    shadowColor: '#52B788',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#6BCF7F',
+    backgroundColor: '#52B788',
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,

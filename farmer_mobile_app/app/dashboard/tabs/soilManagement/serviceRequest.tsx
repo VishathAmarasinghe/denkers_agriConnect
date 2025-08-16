@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,51 +7,86 @@ import {
   ScrollView,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+interface SoilCollectionCenter {
+  id: number;
+  name: string;
+  location_id: number;
+  address: string;
+  contact_number: string;
+  contact_person: string | null;
+  description: string | null;
+  image_url: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  place_id: string | null;
+  operating_hours: string | null;
+  services_offered: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: SoilCollectionCenter[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export default function LocationSelection() {
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [locations, setLocations] = useState<SoilCollectionCenter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Clear selection on component mount (refresh)
   useFocusEffect(
     useCallback(() => {
       setSelectedLocation(null);
+      fetchSoilCollectionCenters();
     }, [])
   );
 
-  const locations = [
-    {
-      id: 1,
-      name: 'Anuradhapura Office - 1',
-      address: 'No. 19 Thornridge Cir. Shiloh, Anuradhapura.',
-      contact: 'Contact - 076 985 3423',
-      image: require('../../../../assets/images/office1.jpg'), 
-    },
-    {
-      id: 2,
-      name: 'Anuradhapura Office - 2',
-      address: 'No. 19 Thornridge Cir. Shiloh, Anuradhapura.',
-      contact: 'Contact - 076 985 3423',
-      image: require('../../../../assets/images/office2.jpg'), // Replace with actual image path
-    },
-    {
-      id: 3,
-      name: 'Anuradhapura Office - 3',
-      address: 'No. 19 Thornridge Cir. Shiloh, Anuradhapura.',
-      contact: 'Contact - 076 985 3423',
-      image: require('../../../../assets/images/office3.jpg'), // Replace with actual image path
-    },
-    {
-      id: 4,
-      name: 'Anuradhapura Office - 4',
-      address: 'No. 19 Thornridge Cir. Shiloh, Anuradhapura.',
-      contact: 'Contact - 076 985 3423',
-      image: require('../../../../assets/images/office4.jpg'), // Replace with actual image path
-    },
-  ];
+  const fetchSoilCollectionCenters = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Replace with your actual API endpoint
+      const response = await fetch('http://206.189.89.116:3000/api/v1/soil-collection-centers?page=1&limit=5');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.success) {
+        // Filter only active centers
+        const activeCenters = data.data.filter(center => center.is_active === 1);
+        setLocations(activeCenters);
+      } else {
+        throw new Error(data.message || 'Failed to fetch soil collection centers');
+      }
+    } catch (err) {
+      console.error('Error fetching soil collection centers:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load locations');
+      Alert.alert('Error', 'Failed to load soil collection centers. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLocationSelect = (locationId: number) => {
     console.log(`Selected Location ID: ${locationId}`);
@@ -67,9 +102,97 @@ export default function LocationSelection() {
       Alert.alert('Please select a location first');
       return;
     }
-    // Navigate to date picker or next screen
-    router.push('/dashboard/tabs/soilManagement/datePicker');
+    // Navigate to date picker with the selected location ID
+    router.push(`/dashboard/tabs/soilManagement/datePicker?locationId=${selectedLocation}`);
   };
+
+  const renderLocationCard = (location: SoilCollectionCenter) => (
+    <TouchableOpacity
+      key={location.id}
+      style={[
+        styles.locationCard,
+        selectedLocation === location.id && styles.selectedCard
+      ]}
+      onPress={() => handleLocationSelect(location.id)}
+    >
+      <View style={styles.locationContent}>
+        <Image
+          source={
+            location.image_url 
+              ? { uri: location.image_url }
+              : require('../../../../assets/images/placeholder.jpg')
+          }
+          style={styles.locationImage}
+          defaultSource={require('../../../../assets/images/placeholder.jpg')}
+        />
+        <View style={styles.locationInfo}>
+          <Text style={styles.locationName}>{location.name}</Text>
+          <Text style={styles.locationAddress}>{location.address}</Text>
+          <Text style={styles.locationContact}>
+            Contact - {location.contact_number}
+          </Text>
+          {location.contact_person && (
+            <Text style={styles.contactPerson}>
+              Person: {location.contact_person}
+            </Text>
+          )}
+          {location.operating_hours && (
+            <Text style={styles.operatingHours}>
+              Hours: {location.operating_hours}
+            </Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={24} color="#666" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Location</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6BCF7F" />
+          <Text style={styles.loadingText}>Loading soil collection centers...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={24} color="#666" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Location</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={fetchSoilCollectionCenters}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -93,29 +216,14 @@ export default function LocationSelection() {
         </View>
 
         <View style={styles.locationList}>
-          {locations.map((location) => (
-            <TouchableOpacity
-              key={location.id}
-              style={[
-                styles.locationCard,
-                selectedLocation === location.id && styles.selectedCard
-              ]}
-              onPress={() => handleLocationSelect(location.id)}
-            >
-              <View style={styles.locationContent}>
-                <Image
-                  source={location.image}
-                  style={styles.locationImage}
-                  defaultSource={require('../../../../assets/images/placeholder.jpg')} // Fallback image
-                />
-                <View style={styles.locationInfo}>
-                  <Text style={styles.locationName}>{location.name}</Text>
-                  <Text style={styles.locationAddress}>{location.address}</Text>
-                  <Text style={styles.locationContact}>{location.contact}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {locations.length > 0 ? (
+            locations.map(renderLocationCard)
+          ) : (
+            <View style={styles.noDataContainer}>
+              <Ionicons name="location-outline" size={64} color="#ccc" />
+              <Text style={styles.noDataText}>No soil collection centers available</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -208,7 +316,7 @@ const styles = StyleSheet.create({
   },
   locationContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   locationImage: {
     width: 60,
@@ -233,6 +341,17 @@ const styles = StyleSheet.create({
   locationContact: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 2,
+  },
+  contactPerson: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  operatingHours: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
   },
   footer: {
     position: 'absolute',
@@ -274,5 +393,52 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     marginLeft: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#6BCF7F',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  noDataText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
