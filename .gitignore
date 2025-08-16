@@ -1,4 +1,10 @@
-# System files
+# ===========================================
+# AgriConnect Global Gitignore
+# ===========================================
+
+# ===========================================
+# System Files
+# ===========================================
 .DS_Store
 .DS_Store?
 ._*
@@ -6,56 +12,255 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Node.js
+node_modules/
 farmer_mobile_app/node_modules/
 farmer_mobile_app/npm-debug.log*
 farmer_mobile_app/yarn-debug.log*
 farmer_mobile_app/yarn-error.log*
+package-lock.json
+farmer_mobile_app/package-lock.json
+=======
+# ===========================================
+# Node.js Dependencies & Build Outputs
+# ===========================================
+# Global node_modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Expo
-farmer_mobile_app/.expo/
-farmer_mobile_app/.expo-shared/
-farmer_mobile_app/dist/
-farmer_mobile_app/expo-env.d.ts
+# Package manager files
+.npm
+.yarn-integrity
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# Native builds
-farmer_mobile_app/android/
-farmer_mobile_app/ios/
+# ===========================================
+# Frontend (Next.js Web App)
+# ===========================================
+web_app/node_modules/
+web_app/.next/
+web_app/out/
+web_app/build/
+web_app/dist/
+web_app/.env*
+web_app/*.tsbuildinfo
+web_app/.vercel
+web_app/.turbo
 
-# Build outputs
-farmer_mobile_app/build/
-farmer_mobile_app/web-build/
 
-# Environment files
-farmer_mobile_app/.env
-farmer_mobile_app/.env.local
-farmer_mobile_app/.env.development.local
-farmer_mobile_app/.env.test.local
-farmer_mobile_app/.env.production.local
-
-# Logs
-farmer_mobile_app/*.log
-
-# Coverage directory used by tools like istanbul
-farmer_mobile_app/coverage/
-
-# IDE files
-farmer_mobile_app/.vscode/
-farmer_mobile_app/.idea/
-
-# Temporary files
-farmer_mobile_app/tmp/
-farmer_mobile_app/temp/
-
-# Backend specific ignores
+# ===========================================
+# Backend (Node.js/Express)
+# ===========================================
 backend/node_modules/
-backend/.env
-backend/.env.*
 backend/dist/
 backend/build/
 backend/logs/
 backend/*.log
+backend/.env*
+backend/uploads/
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+backend/coverage/
+backend/.nyc_output/
+backend/.jest/
 
-# Other
+# ===========================================
+# Mobile App (React Native/Expo)
+# ===========================================
+farmer_mobile_app/node_modules/
+farmer_mobile_app/.expo/
+farmer_mobile_app/.expo-shared/
+farmer_mobile_app/dist/
+farmer_mobile_app/expo-env.d.ts
+farmer_mobile_app/android/
+farmer_mobile_app/ios/
+farmer_mobile_app/build/
+farmer_mobile_app/web-build/
+farmer_mobile_app/.env*
+farmer_mobile_app/*.log
+farmer_mobile_app/coverage/
+farmer_mobile_app/.vscode/
+farmer_mobile_app/.idea/
+farmer_mobile_app/tmp/
+farmer_mobile_app/temp/
+
+# ===========================================
+# Environment & Configuration Files
+# ===========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging.local
+.env.example
+.env.template
+
+# ===========================================
+# Build & Cache Directories
+# ===========================================
+build/
+dist/
+out/
+.cache/
+.parcel-cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.turbo
+.next
+.nuxt
+.vuepress/dist
+.serverless/
+
+# ===========================================
+# Testing & Coverage
+# ===========================================
+coverage/
+.nyc_output/
+.jest/
+*.lcov
+.nyc_output
+
+# ===========================================
+# IDE & Editor Files
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vscode-test
+
+# ===========================================
+# Logs & Runtime Files
+# ===========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ===========================================
+# Docker & Container Files
+# ===========================================
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# ===========================================
+# Database & Data Files
+# ===========================================
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+data/
+database/
+
+# ===========================================
+# Temporary & Cache Files
+# ===========================================
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# ===========================================
+# TypeScript & JavaScript
+# ===========================================
+*.tsbuildinfo
+.tscache/
+
+# ===========================================
+# Package Files
+# ===========================================
+*.tgz
+*.tar.gz
+*.zip
+*.rar
+
+# ===========================================
+# OS Generated Files
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===========================================
+# Project Specific
+# ===========================================
 .cursor/
+ssl/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# ===========================================
+# Development Tools
+# ===========================================
+.eslintcache
+.stylelintcache
+.node_repl_history
+.tern-port
+.fusebox/
+.dynamodb/
+
+# ===========================================
+# Storybook
+# ===========================================
+storybook-static/
+.out
+.storybook-out
+
+# ===========================================
+# Sentry
+# ===========================================
+.sentryclirc
+
+# ===========================================
+# Vercel
+# ===========================================
+.vercel
+
+# ===========================================
+# Turbo
+# ===========================================
+.turbo
+
+# ===========================================
+# Local Development
+# ===========================================
+local/
+local.*
+local-*/

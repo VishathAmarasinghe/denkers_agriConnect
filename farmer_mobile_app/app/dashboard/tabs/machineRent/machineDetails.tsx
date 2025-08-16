@@ -1,205 +1,120 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useState, useEffect } from 'react';
 import CustomButton from '@/components/CustomButton';
-
-interface MachineDetails {
-  id: string;
-  name: string;
-  power: string;
-  specs: string;
-  rental: string;
-  contact: string;
-  image: any;
-  location: string;
-  dailyRate: string;
-  weeklyRate: string;
-  deliveryFee: string;
-  driverFee: string;
-}
+import { useMachineRental } from '@/hooks/useMachineRental';
+import { Equipment } from '@/utils/machineRentalService';
 
 export default function MachineDetailsScreen() {
-  const { machineId, categoryId } = useLocalSearchParams<{ machineId: string; categoryId: string }>();
+  const { machineId, categoryId, machineData } = useLocalSearchParams<{ 
+    machineId: string; 
+    categoryId: string; 
+    machineData: string;
+  }>();
+  const [machine, setMachine] = useState<Equipment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { fetchEquipmentById } = useMachineRental();
 
   const handleBack = () => {
     router.back();
   };
 
   const handleRentMachine = () => {
-    // Navigate to rental booking screen
+    if (machine) {
+      console.log('MachineDetails - Passing machine data:', machine);
+      // Navigate to rental booking screen with machine data
     router.push({
       pathname: '/dashboard/tabs/machineRent/rentalBooking',
       params: { 
         machineId: machineId || '1',
-        categoryId: categoryId || '1'
-      }
-    });
+          categoryId: categoryId || '1',
+          machineData: JSON.stringify(machine) // Pass the machine data
+        }
+      });
+    }
   };
 
-  // Get machine details based on machineId and categoryId
-  const getMachineDetails = (machineId: string, categoryId: string): MachineDetails | null => {
-    const machines = {
-      '1': { // Tractors & Power Equipment
-        '1': {
-          id: '1',
-          name: 'Mahindra 575 DI (75 HP)',
-          power: '75 HP | 4WD | Diesel',
-          rental: 'Rental - Rs. 1,200/day | Rs.7,000/week',
-          contact: '076 985 3423',
-          specs: 'Power: 75 HP | 4WD | Diesel',
-          image: require('@/assets/images/eq_tractor.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 1,200.00',
-          weeklyRate: 'Rs. 7,000.00',
-          deliveryFee: 'Rs. 2,400.00',
-          driverFee: 'Rs. 2,500.00'
-        },
-        '2': {
-          id: '2',
-          name: 'John Deere 5050D (50 HP)',
-          power: '50 HP | 2WD | Diesel',
-          rental: 'Rental - Rs. 900/day | Rs.5,500/week',
-          contact: '076 985 3424',
-          specs: 'Power: 50 HP | 2WD | Diesel',
-          image: require('@/assets/images/eq_tractor.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 900.00',
-          weeklyRate: 'Rs. 5,500.00',
-          deliveryFee: 'Rs. 2,000.00',
-          driverFee: 'Rs. 2,000.00'
-        },
-        '3': {
-          id: '3',
-          name: 'New Holland 3630 (30 HP)',
-          power: '30 HP | 2WD | Diesel',
-          rental: 'Rental - Rs. 700/day | Rs.4,200/week',
-          contact: '076 985 3425',
-          specs: 'Power: 30 HP | 2WD | Diesel',
-          image: require('@/assets/images/eq_tractor.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 700.00',
-          weeklyRate: 'Rs. 4,200.00',
-          deliveryFee: 'Rs. 1,800.00',
-          driverFee: 'Rs. 1,800.00'
-        },
-        '4': {
-          id: '4',
-          name: 'Kubota L2501 (25 HP)',
-          power: '25 HP | 4WD | Diesel',
-          rental: 'Rental - Rs. 600/day | Rs.3,600/week',
-          contact: '076 985 3426',
-          specs: 'Power: 25 HP | 4WD | Diesel',
-          image: require('@/assets/images/eq_tractor.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 600.00',
-          weeklyRate: 'Rs. 3,600.00',
-          deliveryFee: 'Rs. 1,500.00',
-          driverFee: 'Rs. 1,500.00'
-        }
-      },
-      '2': { // Harvesting Machines
-        '1': {
-          id: '1',
-          name: 'Combine Harvester CX8070',
-          power: '270 HP | 4WD | Diesel',
-          rental: 'Rental - Rs. 3,500/day | Rs.21,000/week',
-          contact: '076 985 3427',
-          specs: 'Power: 270 HP | 4WD | Diesel',
-          image: require('@/assets/images/eq_harvestor.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 3,500.00',
-          weeklyRate: 'Rs. 21,000.00',
-          deliveryFee: 'Rs. 5,000.00',
-          driverFee: 'Rs. 3,500.00'
-        },
-        '2': {
-          id: '2',
-          name: 'Grain Header 30ft',
-          power: 'Attachable | 30ft Width',
-          rental: 'Rental - Rs. 800/day | Rs.4,800/week',
-          contact: '076 985 3428',
-          specs: 'Width: 30ft | Attachable',
-          image: require('@/assets/images/eq_harvestor.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 800.00',
-          weeklyRate: 'Rs. 4,800.00',
-          deliveryFee: 'Rs. 2,500.00',
-          driverFee: 'Rs. 1,500.00'
-        }
-      },
-      '3': { // Planting & Seeding Equipment
-        '1': {
-          id: '1',
-          name: 'Planter 12 Row',
-          power: '12 Row | Hydraulic',
-          rental: 'Rental - Rs. 500/day | Rs.3,000/week',
-          contact: '076 985 3429',
-          specs: 'Rows: 12 | Type: Hydraulic',
-          image: require('@/assets/images/eq_planter.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 500.00',
-          weeklyRate: 'Rs. 3,000.00',
-          deliveryFee: 'Rs. 1,200.00',
-          driverFee: 'Rs. 1,000.00'
-        },
-        '2': {
-          id: '2',
-          name: 'Seed Drill 8 Row',
-          power: '8 Row | Mechanical',
-          rental: 'Rental - Rs. 400/day | Rs.2,400/week',
-          contact: '076 985 3430',
-          specs: 'Rows: 8 | Type: Mechanical',
-          image: require('@/assets/images/eq_planter.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 400.00',
-          weeklyRate: 'Rs. 2,400.00',
-          deliveryFee: 'Rs. 1,000.00',
-          driverFee: 'Rs. 800.00'
-        }
-      },
-      '4': { // Tillage & Cultivation
-        '1': {
-          id: '1',
-          name: 'Disc Harrow 8ft',
-          power: '8ft Width | Hydraulic',
-          rental: 'Rental - Rs. 300/day | Rs.1,800/week',
-          contact: '076 985 3431',
-          specs: 'Width: 8ft | Type: Hydraulic',
-          image: require('@/assets/images/eq_tiller.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 300.00',
-          weeklyRate: 'Rs. 1,800.00',
-          deliveryFee: 'Rs. 800.00',
-          driverFee: 'Rs. 600.00'
-        },
-        '2': {
-          id: '2',
-          name: 'Rotary Tiller 6ft',
-          power: '6ft Width | PTO Driven',
-          rental: 'Rental - Rs. 250/day | Rs.1,500/week',
-          contact: '076 985 3432',
-          specs: 'Width: 6ft | Type: PTO Driven',
-          image: require('@/assets/images/eq_tiller.png'),
-          location: 'Mihinthale Extension Office',
-          dailyRate: 'Rs. 250.00',
-          weeklyRate: 'Rs. 1,500.00',
-          deliveryFee: 'Rs. 600.00',
-          driverFee: 'Rs. 500.00'
-        }
-      }
-    };
-
-    return machines[categoryId]?.[machineId] || null;
+  const handleRetry = () => {
+    if (machineId) {
+      loadMachineDetails();
+    }
   };
 
-  const machine = getMachineDetails(machineId || '1', categoryId || '1');
+  const loadMachineDetails = async () => {
+    if (!machineId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // First try to use the passed machine data
+      if (machineData) {
+        try {
+          const parsedMachine = JSON.parse(machineData);
+          setMachine(parsedMachine);
+          setLoading(false);
+          return;
+        } catch (parseError) {
+          console.warn('Failed to parse machine data from params, falling back to API call');
+        }
+      }
+      
+      // Fallback to API call if no machine data or parsing failed
+      const equipment = await fetchEquipmentById(parseInt(machineId));
+      if (equipment != null) {
+        setMachine(equipment);
+      } else {
+        setError('Equipment not found');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load equipment details';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (!machine) {
-    return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <Text className="text-lg text-gray-600">Machine not found</Text>
+  // Load machine details on mount
+  useEffect(() => {
+    console.log('MachineDetails - machineId:', machineId);
+    console.log('MachineDetails - machineData:', machineData);
+    loadMachineDetails();
+  }, [machineId]);
+
+  const renderLoadingState = () => (
+    <View className="flex-1 bg-white items-center justify-center">
+      <ActivityIndicator size="large" color="#000" />
+      <Text className="text-lg text-gray-600 mt-4">Loading machine details...</Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View className="flex-1 bg-white items-center justify-center px-6">
+      <MaterialIcons name="error-outline" size={64} color="#ef4444" />
+      <Text className="text-lg font-bold text-black text-center mt-4 mb-2">
+        Failed to Load Equipment
+      </Text>
+      <Text className="text-base text-black text-center mb-6 leading-6">
+        {error || 'Unable to load equipment details. Please check your internet connection and try again.'}
+      </Text>
+      <TouchableOpacity
+        className="bg-black px-6 py-3 rounded-lg"
+        onPress={handleRetry}
+      >
+        <Text className="text-white font-semibold">Retry</Text>
+      </TouchableOpacity>
       </View>
     );
+
+  if (loading) {
+    return renderLoadingState();
+  }
+
+  if (error || !machine) {
+    return renderErrorState();
   }
 
   return (
@@ -233,7 +148,7 @@ export default function MachineDetailsScreen() {
           {/* Machine Image */}
           <View className="items-center mb-6">
             <Image
-              source={machine.image}
+              source={machine.equipment_image_url ? { uri: machine.equipment_image_url } : require('@/assets/images/eq_tractor.png')}
               style={{ width: 280, height: 200 }}
               resizeMode="contain"
             />
@@ -244,26 +159,37 @@ export default function MachineDetailsScreen() {
             <Text className="text-2xl font-bold text-black mb-2">
               {machine.name}
             </Text>
-            <Text className="text-base text-black">
-              {machine.specs}
+            {/* Equipment Description */}
+            <View className="mb-6">
+              <Text className="text-lg font-bold text-black mb-2">Description</Text>
+              <Text className="text-base text-gray-700 leading-6">
+                {machine.description}
             </Text>
+            </View>
           </View>
 
           {/* Information Sections */}
           <View className="space-y-4 mb-8">
-            {/* Machine Location */}
+            {/* Machine Specifications */}
+            {machine.specifications && (
             <View>
-              <Text className="text-lg font-bold text-black mb-2">Machine Location</Text>
+                <Text className="text-lg font-bold text-black mb-2">Specifications</Text>
               <View className="bg-gray-100 p-4 rounded-lg">
-                <Text className="text-base text-black">{machine.location}</Text>
+                  <Text className="text-base text-black">
+                    {typeof machine.specifications === 'string' 
+                      ? machine.specifications 
+                      : JSON.stringify(machine.specifications, null, 2)
+                    }
+                  </Text>
               </View>
             </View>
+            )}
 
-            {/* Contact No. */}
+            {/* Contact Information */}
             <View>
-              <Text className="text-lg font-bold text-black mb-2">Contact No.</Text>
+              <Text className="text-lg font-bold text-black mb-2">Contact Information</Text>
               <View className="bg-gray-100 p-4 rounded-lg">
-                <Text className="text-base text-black">{machine.contact}</Text>
+                <Text className="text-base text-black">Phone: {machine.contact_number}</Text>
               </View>
             </View>
 
@@ -271,8 +197,11 @@ export default function MachineDetailsScreen() {
             <View>
               <Text className="text-lg font-bold text-black mb-2">Rental Fees</Text>
               <View className="bg-gray-100 p-4 rounded-lg space-y-2">
-                <Text className="text-base text-black">Per Day - {machine.dailyRate}</Text>
-                <Text className="text-base text-black">Per Week - {machine.weeklyRate}</Text>
+                <Text className="text-base text-black">Per Day - Rs. {parseInt(String(machine.daily_rate || '0').replace('.00', '')).toLocaleString()}</Text>
+                <Text className="text-base text-black">Per Week - Rs. {parseInt(String(machine.weekly_rate || '0').replace('.00', '')).toLocaleString()}</Text>
+                {machine.monthly_rate && (
+                  <Text className="text-base text-black">Per Month - Rs. {parseInt(String(machine.monthly_rate || '0').replace('.00', '')).toLocaleString()}</Text>
+                )}
               </View>
             </View>
 
@@ -280,10 +209,20 @@ export default function MachineDetailsScreen() {
             <View>
               <Text className="text-lg font-bold text-black mb-2">Other Fees</Text>
               <View className="bg-gray-100 p-4 rounded-lg space-y-2">
-                <Text className="text-base text-black">Delivery Fee - {machine.deliveryFee}</Text>
-                <Text className="text-base text-black">Driver Fee - {machine.driverFee} (per day)</Text>
+                <Text className="text-base text-black">Delivery Fee - Rs. {parseInt(String(machine.delivery_fee || '0').replace('.00', '')).toLocaleString()}</Text>
+                <Text className="text-base text-black">Security Deposit - Rs. {parseInt(String(machine.security_deposit || '0').replace('.00', '')).toLocaleString()}</Text>
               </View>
             </View>
+
+            {/* Maintenance Notes */}
+            {machine.maintenance_notes && (
+              <View>
+                <Text className="text-lg font-bold text-black mb-2">Maintenance Notes</Text>
+                <View className="bg-gray-100 p-4 rounded-lg">
+                  <Text className="text-base text-black">{machine.maintenance_notes}</Text>
+              </View>
+            </View>
+            )}
           </View>
         </ScrollView>
 
@@ -292,9 +231,8 @@ export default function MachineDetailsScreen() {
           <CustomButton
             title="Rent Machine"
             onPress={handleRentMachine}
+            className="w-full py-4"
             variant="primary"
-            size="large"
-            fullWidth={true}
           />
         </View>
       </View>

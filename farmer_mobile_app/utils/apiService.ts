@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ServiceBaseUrl } from '@/config/config';
 
 export class APIService {
   private static _instance: AxiosInstance;
@@ -83,7 +84,8 @@ export class APIService {
   // Get the shared axios instance
   public static getInstance(): AxiosInstance {
     if (!APIService._instance) {
-      throw new Error('APIService not initialized. Call initialize() first.');
+      // Fallback: auto-initialize with default base URL
+      APIService.initialize(ServiceBaseUrl);
     }
     return APIService._instance;
   }

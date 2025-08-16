@@ -10,6 +10,10 @@ export default function MachineRentScreen() {
     router.push('/dashboard/tabs/machineRent/equipmentCategory');
   };
 
+  const handleViewRequests = () => {
+    router.push('/dashboard/tabs/machineRent/rentalRequests');
+  };
+
   return (
     <>
       <Stack.Screen 
@@ -44,7 +48,7 @@ export default function MachineRentScreen() {
           <View className="absolute -top-8 left-0 right-0 h-16 bg-white rounded-t-[40px]" />
           
           {/* Content */}
-          <View className="flex-1 px-8 pt-16 pb-40">
+          <View className="flex-1 px-8 pt-4 pb-40">
             {/* Title */}
             <Text className="text-3xl font-bold text-black text-center mb-6 leading-tight">
               Get the Right Machine{'\n'}For Your Farm
@@ -55,11 +59,24 @@ export default function MachineRentScreen() {
               Access a wide range of modern agricultural machinery without the high investment costs. Choose from tractors, harvesters, planters, and specialized equipment with flexible rental periods, delivery service, and optional trained operators.
             </Text>
 
-            {/* CTA Button */}
+            {/* Action Buttons */}
             <View className="px-4">
-
-            <CustomButton title="Rent a Machine" onPress={handleRentMachine} variant="primary" size="large" fullWidth={true} />
-
+              <CustomButton 
+                title="Rent a Machine" 
+                onPress={handleRentMachine} 
+                variant="primary" 
+                size="large" 
+                fullWidth={true} 
+                className="mb-2"
+              />
+              
+              <CustomButton 
+                title="View My Rentals" 
+                onPress={handleViewRequests} 
+                variant="outline" 
+                size="large" 
+                fullWidth={true} 
+              />
             </View>
           </View>
         </View>
