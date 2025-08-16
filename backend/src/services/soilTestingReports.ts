@@ -8,26 +8,95 @@ import * as path from 'path';
 
 class SoilTestingReportsService {
   /**
+   * Create soil testing report (Admin only) - without file upload
+   */
+  async createReport(reportData: SoilTestingReportCreate): Promise<ApiResponse> {
+    try {
+      // If soil_testing_id is provided and greater than 0, validate that the soil testing exists and is completed
+      if (reportData.soil_testing_id && reportData.soil_testing_id > 0) {
+        const soilTesting = await SoilTestingScheduleModel.findById(reportData.soil_testing_id);
+        if (!soilTesting) {
+          return {
+            success: false,
+            message: 'Soil testing not found',
+            data: null
+          };
+        }
+
+        if (soilTesting.status !== 'completed') {
+          return {
+            success: false,
+            message: 'Soil testing must be completed before creating a report',
+            data: null
+          };
+        }
+      }
+
+      // Create report record without file
+      const reportRecord: SoilTestingReportCreate = {
+        ...reportData,
+        report_file_name: reportData.report_file_name || '',
+        report_file_path: reportData.report_file_path || '',
+        report_file_size: reportData.report_file_size || 0,
+        report_file_type: reportData.report_file_type || ''
+      };
+
+      const report = await SoilTestingReportModel.create(reportRecord);
+
+      // Send notification to farmer if soil_testing_id is provided and greater than 0
+      if (reportData.soil_testing_id && reportData.soil_testing_id > 0) {
+        try {
+          const soilTesting = await SoilTestingScheduleModel.findById(reportData.soil_testing_id);
+          if (soilTesting && soilTesting.farmer_phone) {
+            const message = `Your soil testing report for ${reportData.testing_date} has been created. You can view and download it from your dashboard.`;
+            await NotificationService.sendSMS({ 
+              recipient: soilTesting.farmer_phone, 
+              message 
+            });
+          }
+        } catch (error) {
+          console.error('Failed to send notification SMS:', error);
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Soil testing report created successfully',
+        data: report
+      };
+    } catch (error) {
+      console.error('Create soil testing report error:', error);
+      return {
+        success: false,
+        message: 'Failed to create soil testing report. Please try again.',
+        data: null
+      };
+    }
+  }
+
+  /**
    * Upload soil testing report (Admin only)
    */
   async uploadReport(reportData: SoilTestingReportCreate, file: Express.Multer.File): Promise<ApiResponse> {
     try {
-      // Validate that the soil testing exists and is completed
-      const soilTesting = await SoilTestingScheduleModel.findById(reportData.soil_testing_id);
-      if (!soilTesting) {
-        return {
-          success: false,
-          message: 'Soil testing not found',
-          data: null
-        };
-      }
+      // If soil_testing_id is provided and greater than 0, validate that the soil testing exists and is completed
+      if (reportData.soil_testing_id && reportData.soil_testing_id > 0) {
+        const soilTesting = await SoilTestingScheduleModel.findById(reportData.soil_testing_id);
+        if (!soilTesting) {
+          return {
+            success: false,
+            message: 'Soil testing not found',
+            data: null
+          };
+        }
 
-      if (soilTesting.status !== 'completed') {
-        return {
-          success: false,
-          message: 'Soil testing must be completed before uploading a report',
-          data: null
-        };
+        if (soilTesting.status !== 'completed') {
+          return {
+            success: false,
+            message: 'Soil testing must be completed before uploading a report',
+            data: null
+          };
+        }
       }
 
       // Create uploads directory if it doesn't exist
@@ -56,15 +125,20 @@ class SoilTestingReportsService {
 
       const report = await SoilTestingReportModel.create(reportRecord);
 
-      // Send notification to farmer
-      try {
-        const message = `Your soil testing report for ${reportData.testing_date} is now available. You can view and download it from your dashboard.`;
-        await NotificationService.sendSMS({ 
-          recipient: soilTesting.farmer_phone, 
-          message 
-        });
-      } catch (error) {
-        console.error('Failed to send notification SMS:', error);
+      // Send notification to farmer if soil_testing_id is provided and greater than 0
+      if (reportData.soil_testing_id && reportData.soil_testing_id > 0) {
+        try {
+          const soilTesting = await SoilTestingScheduleModel.findById(reportData.soil_testing_id);
+          if (soilTesting && soilTesting.farmer_phone) {
+            const message = `Your soil testing report for ${reportData.testing_date} is now available. You can view and download it from your dashboard.`;
+            await NotificationService.sendSMS({ 
+              recipient: soilTesting.farmer_phone, 
+              message 
+            });
+          }
+        } catch (error) {
+          console.error('Failed to send notification SMS:', error);
+        }
       }
 
       return {

@@ -424,7 +424,6 @@ export interface WarehouseInventory {
   item_condition: 'good' | 'moderate' | 'poor';
   expiry_date?: Date;
   notes?: string;
-  // New fields for farmer storage
   farmer_id?: number;
   farmer_name?: string;
   farmer_phone?: string;
@@ -558,23 +557,57 @@ export interface FarmerWarehouseRequestSearchParams {
   limit?: number;
 }
 
+// New types for market items
+export interface MarketItem {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  unit: string;
+  image_url?: string;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface MarketItemCreate {
+  name: string;
+  description?: string;
+  category?: string;
+  unit?: string;
+  image_url?: string;
+  is_active?: boolean;
+}
+
+export interface MarketItemUpdate {
+  name?: string;
+  description?: string;
+  category?: string;
+  unit?: string;
+  image_url?: string;
+  is_active?: boolean;
+}
+
 // New types for market prices
 export interface MarketPrice {
   id: number;
-  item_name: string;
+  market_item_id: number;
   current_price: number;
-  unit: string;
   price_date: Date;
   source: string;
   notes?: string;
   created_at: Date;
   updated_at: Date;
+  // Joined fields for display
+  item_name?: string;
+  item_description?: string;
+  item_category?: string;
+  item_unit?: string;
 }
 
 export interface MarketPriceCreate {
-  item_name: string;
+  market_item_id: number;
   current_price: number;
-  unit: string;
   price_date: Date;
   source: string;
   notes?: string;
@@ -1171,6 +1204,11 @@ export interface QRCodeData {
   center_id: number;
   scheduled_date: string;
   timestamp: string;
+}
+
+export interface EnhancedQRCodeData extends QRCodeData {
+  uniqueId: string;
+  verificationUrl: string;
 }
 
 // ==================== SOIL TESTING REPORTS ====================

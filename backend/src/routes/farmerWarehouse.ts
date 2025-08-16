@@ -37,17 +37,29 @@ router.post('/requests', authenticateToken, requireFarmer, async (req, res) => {
   }
 });
 
-// Get farmer's warehouse requests (Farmer only)
-router.get('/requests', authenticateToken, requireFarmer, async (req, res) => {
+// Get farmer's warehouse requests (Farmer only) or all requests (Admin)
+router.get('/requests', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
-    const farmerId = (req as any).user.userId;
+    const user = (req as any).user;
     const { page, limit, status } = req.query;
     
-    const requests = await FarmerWarehouseService.getFarmerRequests(
-      farmerId,
-      parseInt(String(page || 1)),
-      parseInt(String(limit || 10))
-    );
+    let requests;
+    if (user.role === 'admin') {
+      // Admin can see all requests
+      requests = await FarmerWarehouseService.getAllRequests(
+        parseInt(String(page || 1)),
+        parseInt(String(limit || 10)),
+        status as string
+      );
+    } else {
+      // Farmer can only see their own requests
+      const farmerId = user.userId;
+      requests = await FarmerWarehouseService.getFarmerRequests(
+        farmerId,
+        parseInt(String(page || 1)),
+        parseInt(String(limit || 10))
+      );
+    }
     
     return res.json({
       success: true,
@@ -172,17 +184,28 @@ router.post('/requests/:id/reject', authenticateToken, requireAdmin, async (req,
 
 // ==================== FARMER STORAGE MANAGEMENT ====================
 
-// Get farmer's storage items (Farmer only)
-router.get('/storage', authenticateToken, requireFarmer, async (req, res) => {
+// Get farmer's storage items (Farmer or Admin)
+router.get('/storage', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
-    const farmerId = (req as any).user.userId;
+    const user = (req as any).user;
     const { page, limit } = req.query;
     
-    const storage = await FarmerWarehouseService.getFarmerStorage(
-      farmerId,
-      parseInt(String(page || 1)),
-      parseInt(String(limit || 10))
-    );
+    let storage;
+    if (user.role === 'admin') {
+      // Admin can see all storage items
+      storage = await FarmerWarehouseService.getAllStorage(
+        parseInt(String(page || 1)),
+        parseInt(String(limit || 10))
+      );
+    } else {
+      // Farmer can only see their own storage
+      const farmerId = user.userId;
+      storage = await FarmerWarehouseService.getFarmerStorage(
+        farmerId,
+        parseInt(String(page || 1)),
+        parseInt(String(limit || 10))
+      );
+    }
     
     return res.json({
       success: true,
@@ -197,11 +220,20 @@ router.get('/storage', authenticateToken, requireFarmer, async (req, res) => {
   }
 });
 
-// Get farmer's storage summary (Farmer only)
-router.get('/storage/summary', authenticateToken, requireFarmer, async (req, res) => {
+// Get farmer's storage summary (Farmer or Admin)
+router.get('/storage/summary', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
-    const farmerId = (req as any).user.userId;
-    const summary = await FarmerWarehouseService.getFarmerStorageSummary(farmerId);
+    const user = (req as any).user;
+    
+    let summary;
+    if (user.role === 'admin') {
+      // Admin can see overall storage summary
+      summary = await FarmerWarehouseService.getAllStorageSummary();
+    } else {
+      // Farmer can only see their own storage summary
+      const farmerId = user.userId;
+      summary = await FarmerWarehouseService.getFarmerStorageSummary(farmerId);
+    }
     
     return res.json({
       success: true,
@@ -216,16 +248,26 @@ router.get('/storage/summary', authenticateToken, requireFarmer, async (req, res
   }
 });
 
-// Get farmer's expiring items (Farmer only)
-router.get('/storage/expiring', authenticateToken, requireFarmer, async (req, res) => {
+// Get farmer's expiring items (Farmer or Admin)
+router.get('/storage/expiring', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
-    const farmerId = (req as any).user.userId;
+    const user = (req as any).user;
     const { days } = req.query;
     
-    const expiringItems = await FarmerWarehouseService.getFarmerExpiringItems(
-      farmerId,
-      parseInt(String(days || 30))
-    );
+    let expiringItems;
+    if (user.role === 'admin') {
+      // Admin can see all expiring items
+      expiringItems = await FarmerWarehouseService.getAllExpiringItems(
+        parseInt(String(days || 30))
+      );
+    } else {
+      // Farmer can only see their own expiring items
+      const farmerId = user.userId;
+      expiringItems = await FarmerWarehouseService.getFarmerExpiringItems(
+        farmerId,
+        parseInt(String(days || 30))
+      );
+    }
     
     return res.json({
       success: true,
@@ -240,11 +282,20 @@ router.get('/storage/expiring', authenticateToken, requireFarmer, async (req, re
   }
 });
 
-// Get farmer's expired items (Farmer only)
-router.get('/storage/expired', authenticateToken, requireFarmer, async (req, res) => {
+// Get farmer's expired items (Farmer or Admin)
+router.get('/storage/expired', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
-    const farmerId = (req as any).user.userId;
-    const expiredItems = await FarmerWarehouseService.getFarmerExpiredItems(farmerId);
+    const user = (req as any).user;
+    
+    let expiredItems;
+    if (user.role === 'admin') {
+      // Admin can see all expired items
+      expiredItems = await FarmerWarehouseService.getAllExpiredItems();
+    } else {
+      // Farmer can only see their own expired items
+      const farmerId = user.userId;
+      expiredItems = await FarmerWarehouseService.getFarmerExpiredItems(farmerId);
+    }
     
     return res.json({
       success: true,
@@ -288,17 +339,28 @@ router.post('/storage', authenticateToken, requireAdmin, async (req, res) => {
 
 // ==================== NOTIFICATIONS ====================
 
-// Get farmer's notifications (Farmer only)
-router.get('/notifications', authenticateToken, requireFarmer, async (req, res) => {
+// Get farmer's notifications (Farmer or Admin)
+router.get('/notifications', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
-    const farmerId = (req as any).user.userId;
+    const user = (req as any).user;
     const { page, limit } = req.query;
     
-    const notifications = await FarmerWarehouseService.getFarmerNotifications(
-      farmerId,
-      parseInt(String(page || 1)),
-      parseInt(String(limit || 10))
-    );
+    let notifications;
+    if (user.role === 'admin') {
+      // Admin can see all notifications
+      notifications = await FarmerWarehouseService.getAllNotifications(
+        parseInt(String(page || 1)),
+        parseInt(String(limit || 10))
+      );
+    } else {
+      // Farmer can only see their own notifications
+      const farmerId = user.userId;
+      notifications = await FarmerWarehouseService.getFarmerNotifications(
+        farmerId,
+        parseInt(String(page || 1)),
+        parseInt(String(limit || 10))
+      );
+    }
     
     return res.json({
       success: true,
@@ -313,8 +375,8 @@ router.get('/notifications', authenticateToken, requireFarmer, async (req, res) 
   }
 });
 
-// Mark notification as read (Farmer only)
-router.put('/notifications/:id/read', authenticateToken, requireFarmer, async (req, res) => {
+// Mark notification as read (Farmer or Admin)
+router.put('/notifications/:id/read', authenticateToken, requireFarmerOrAdmin, async (req, res) => {
   try {
     const notificationId = parseInt(req.params.id);
     const marked = await FarmerWarehouseService.markNotificationAsRead(notificationId);
@@ -343,10 +405,10 @@ router.put('/notifications/:id/read', authenticateToken, requireFarmer, async (r
 // Get market prices (Public)
 router.get('/market-prices', async (req, res) => {
   try {
-    const { item_name, page, limit } = req.query;
+    const { market_item_id, page, limit } = req.query;
     
     const prices = await FarmerWarehouseService.getMarketPrices(
-      item_name as string,
+      market_item_id ? parseInt(String(market_item_id)) : undefined,
       parseInt(String(page || 1)),
       parseInt(String(limit || 10))
     );
@@ -388,29 +450,104 @@ router.get('/market-prices/:itemName/history', async (req, res) => {
   }
 });
 
-// Update market price (Admin only)
+// Create new market price (Admin only)
 router.post('/market-prices', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { item_name, current_price, source } = req.body;
+    const { market_item_id, current_price, price_date, source, notes } = req.body;
     
-    if (!item_name || !current_price) {
+    if (!market_item_id || !current_price) {
       return res.status(400).json({
         success: false,
-        message: 'Item name and current price are required'
+        message: 'Market item ID and current price are required'
       });
     }
     
-    const priceId = await FarmerWarehouseService.updateMarketPrice(item_name, current_price, source);
+    const priceData = {
+      market_item_id: parseInt(market_item_id),
+      current_price: parseFloat(current_price),
+      price_date: price_date || new Date(),
+      source: source || 'admin',
+      notes
+    };
+    
+    const priceId = await FarmerWarehouseService.createMarketPrice(priceData);
     
     return res.json({
       success: true,
-      message: 'Market price updated successfully',
+      message: 'Market price created successfully',
       data: { id: priceId }
     });
   } catch (error: any) {
     return res.status(400).json({
       success: false,
+      message: error.message || 'Failed to create market price'
+    });
+  }
+});
+
+// Update market price (Admin only)
+router.put('/market-prices/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const priceId = parseInt(req.params.id);
+    const { current_price, price_date, source, notes } = req.body;
+    
+    if (!current_price) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current price is required'
+      });
+    }
+    
+    const updateData = {
+      current_price: parseFloat(current_price),
+      price_date: price_date || new Date(),
+      source: source || 'admin_update',
+      notes
+    };
+    
+    const success = await FarmerWarehouseService.updateMarketPriceById(priceId, updateData);
+    
+    if (!success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Market price not found'
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Market price updated successfully'
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
       message: error.message || 'Failed to update market price'
+    });
+  }
+});
+
+// Delete market price (Admin only)
+router.delete('/market-prices/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const priceId = parseInt(req.params.id);
+    
+    const success = await FarmerWarehouseService.deleteMarketPrice(priceId);
+    
+    if (!success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Market price not found'
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Market price deleted successfully'
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to delete market price'
     });
   }
 });

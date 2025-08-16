@@ -262,6 +262,17 @@ class FarmerWarehouseRequestModel {
   }
 
   /**
+   * Get all requests (Admin only)
+   */
+  static async getAll(page: number = 1, limit: number = 10, status?: string): Promise<PaginatedResponse<FarmerWarehouseRequestType>> {
+    const searchParams: any = { page, limit };
+    if (status) {
+      searchParams.status = status;
+    }
+    return this.search(searchParams);
+  }
+
+  /**
    * Map database row to FarmerWarehouseRequest object
    */
   private static mapRowToFarmerWarehouseRequest(row: any): FarmerWarehouseRequestType {

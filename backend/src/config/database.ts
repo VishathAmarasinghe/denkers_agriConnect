@@ -748,19 +748,37 @@ const createTables = async (connection: mysql.PoolConnection): Promise<void> => 
     )
   `);
 
+  // Market items table
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS market_items (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(255) NOT NULL UNIQUE,
+      description TEXT,
+      category VARCHAR(100),
+      unit VARCHAR(50) DEFAULT 'kg',
+      image_url VARCHAR(500),
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_name (name),
+      INDEX idx_category (category),
+      INDEX idx_is_active (is_active)
+    )
+  `);
+
   // Market prices table
   await connection.execute(`
     CREATE TABLE IF NOT EXISTS market_prices (
       id BIGINT PRIMARY KEY AUTO_INCREMENT,
-      item_name VARCHAR(255) NOT NULL,
+      market_item_id BIGINT NOT NULL,
       current_price DECIMAL(10,2) NOT NULL,
-      unit VARCHAR(20) NOT NULL DEFAULT 'kg',
       price_date DATE NOT NULL,
       source VARCHAR(255) NOT NULL,
       notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX idx_item_name (item_name),
+      FOREIGN KEY (market_item_id) REFERENCES market_items(id) ON DELETE CASCADE,
+      INDEX idx_market_item_id (market_item_id),
       INDEX idx_price_date (price_date),
       INDEX idx_source (source)
     )

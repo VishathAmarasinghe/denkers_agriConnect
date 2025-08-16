@@ -53,7 +53,7 @@ class SoilTestingScheduleModel {
           scc.address as center_address,
           u.first_name as farmer_first_name,
           u.last_name as farmer_last_name,
-          fv.specialization as field_visitor_specialization
+          fo.specialization as field_officer_specialization
         FROM soil_testing s
         LEFT JOIN soil_collection_centers scc ON s.soil_collection_center_id = scc.id
         LEFT JOIN users u ON s.farmer_id = u.id

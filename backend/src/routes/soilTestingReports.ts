@@ -73,6 +73,34 @@ router.post('/upload', authenticateToken, requireAdmin, upload.single('report_fi
 });
 
 /**
+ * @route   POST /api/v1/soil-testing-reports
+ * @desc    Create a new soil testing report (Admin only)
+ * @access  Private (Admin)
+ */
+router.post('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const reportData = req.body;
+    
+    // Validate input data
+    const validationErrors = ValidationService.validateSoilTestingReport(reportData);
+    if (validationErrors.length > 0) {
+      return ResponseService.validationError(res, validationErrors);
+    }
+
+    const result = await SoilTestingReportsService.createReport(reportData);
+
+    if (result.success) {
+      return ResponseService.success(res, result.data, result.message, 201);
+    } else {
+      return ResponseService.error(res, result.message, 400);
+    }
+  } catch (error) {
+    console.error('Create soil testing report error:', error);
+    return ResponseService.error(res, 'Failed to create soil testing report. Please try again.', 500);
+  }
+});
+
+/**
  * @route   GET /api/v1/soil-testing-reports
  * @desc    Get all soil testing reports (Admin only)
  * @access  Private (Admin)

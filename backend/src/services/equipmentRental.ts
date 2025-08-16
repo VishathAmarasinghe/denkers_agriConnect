@@ -4,16 +4,16 @@ import { EquipmentAvailabilityModel } from '../models/EquipmentAvailability';
 import { EquipmentRentalRequestModel } from '../models/EquipmentRentalRequest';
 import NotificationService from './notification';
 import { ApiResponse } from '../types';
+import QRCodeService from './qrCode';
 import { 
   EquipmentCategory, EquipmentCategoryCreate, EquipmentCategoryUpdate, EquipmentCategorySearchParams,
   Equipment, EquipmentCreate, EquipmentUpdate, EquipmentSearchParams,
   EquipmentAvailability, EquipmentAvailabilityCreate, EquipmentAvailabilityUpdate, EquipmentAvailabilitySearchParams,
   EquipmentRentalRequest, EquipmentRentalRequestCreate, EquipmentRentalRequestUpdate, EquipmentRentalRequestSearchParams,
-  AvailableEquipmentResponse, EquipmentRentalQRCodeData
+  AvailableEquipmentResponse
 } from '../types';
 
 class EquipmentRentalService {
-  // ==================== EQUIPMENT CATEGORIES ====================
 
   /**
    * Create equipment category (Admin only)
@@ -539,23 +539,21 @@ class EquipmentRentalService {
         };
       }
 
-      // Generate pickup QR code
-      const pickupQRData: EquipmentRentalQRCodeData = {
-        requestId: request.id,
-        farmerId: request.farmer_id,
-        equipmentId: request.equipment_id,
-        type: 'pickup',
-        timestamp: new Date().toISOString(),
-        qrCode: `PICKUP_${request.id}_${Date.now()}`
-      };
+      // Generate pickup QR code using centralized service
+      const pickupQRData = QRCodeService.generateEquipmentRentalQRCodeData(
+        request.id,
+        request.farmer_id,
+        request.equipment_id,
+        'pickup'
+      );
 
-      const pickupQRUrl = `https://qrcode.example.com/generate?data=${encodeURIComponent(JSON.stringify(pickupQRData))}`;
+      const pickupQRUrl = QRCodeService.generateEquipmentRentalQRCodeURL(pickupQRData);
 
       // Update request with approval details and QR code
       const updatedRequest = await EquipmentRentalRequestModel.update(requestId, {
         status: 'approved',
         approved_by: adminId,
-        approved_at: new Date().toISOString(),
+        approved_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
         admin_notes: adminNotes,
         pickup_qr_code_url: pickupQRUrl,
         pickup_qr_code_data: JSON.stringify(pickupQRData)
@@ -563,7 +561,8 @@ class EquipmentRentalService {
 
       // Send SMS notification to farmer
       try {
-        const message = `Your equipment rental request for ${request.equipment_name} has been approved! Pickup QR Code: ${pickupQRUrl}`;
+        const verificationUrl = QRCodeService.generateEquipmentRentalVerificationURL(pickupQRData);
+        const message = `Your equipment rental request for ${request.equipment_name} has been approved! Pickup verification: ${verificationUrl}`;
         await NotificationService.sendSMS({ 
           recipient: request.receiver_phone, 
           message 
@@ -606,7 +605,7 @@ class EquipmentRentalService {
       const updatedRequest = await EquipmentRentalRequestModel.update(requestId, {
         status: 'rejected',
         approved_by: adminId,
-        approved_at: new Date().toISOString(),
+        approved_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
         admin_notes: adminNotes,
         rejection_reason: rejectionReason
       });
@@ -652,21 +651,19 @@ class EquipmentRentalService {
         };
       }
 
-      // Generate return QR code
-      const returnQRData: EquipmentRentalQRCodeData = {
-        requestId: request.id,
-        farmerId: request.farmer_id,
-        equipmentId: request.equipment_id,
-        type: 'return',
-        timestamp: new Date().toISOString(),
-        qrCode: `RETURN_${request.id}_${Date.now()}`
-      };
+      // Generate return QR code using centralized service
+      const returnQRData = QRCodeService.generateEquipmentRentalQRCodeData(
+        request.id,
+        request.farmer_id,
+        request.equipment_id,
+        'return'
+      );
 
-      const returnQRUrl = `https://qrcode.example.com/generate?data=${encodeURIComponent(JSON.stringify(returnQRData))}`;
+      const returnQRUrl = QRCodeService.generateEquipmentRentalQRCodeURL(returnQRData);
 
       // Update request with pickup confirmation and return QR code
       const updatedRequest = await EquipmentRentalRequestModel.update(requestId, {
-        pickup_confirmed_at: new Date().toISOString(),
+        pickup_confirmed_at: new Date().toISOString().split('T')[0],
         status: 'active',
         return_qr_code_url: returnQRUrl,
         return_qr_code_data: JSON.stringify(returnQRData)
@@ -674,7 +671,8 @@ class EquipmentRentalService {
 
       // Send SMS notification to farmer
       try {
-        const message = `Equipment pickup confirmed! Return QR Code: ${returnQRUrl}`;
+        const verificationUrl = QRCodeService.generateEquipmentRentalVerificationURL(returnQRData);
+        const message = `Equipment pickup confirmed! Return verification: ${verificationUrl}`;
         await NotificationService.sendSMS({ 
           recipient: request.receiver_phone, 
           message 
@@ -715,7 +713,7 @@ class EquipmentRentalService {
 
       // Update request with return confirmation
       const updatedRequest = await EquipmentRentalRequestModel.update(requestId, {
-        return_confirmed_at: new Date().toISOString(),
+        return_confirmed_at: new Date().toISOString().split('T')[0],
         status: 'returned'
       });
 

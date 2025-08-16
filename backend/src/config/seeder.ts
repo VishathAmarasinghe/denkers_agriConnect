@@ -37,11 +37,23 @@ const seedDatabase = async (): Promise<boolean> => {
     // Seed sample market rates
     await seedMarketRates(connection);
     
+    // Seed market items
+    await seedMarketItems(connection);
+    
+    // Seed market prices
+    await seedMarketPrices(connection);
+    
     // Create contact requests table if it doesn't exist
     await createContactRequestsTable(connection);
     
     // Seed sample contact requests
     await seedContactRequests(connection);
+    
+    // Seed sample warehouse inventory
+    await seedWarehouseInventory(connection);
+
+    // Seed sample farmer warehouse requests
+    await seedFarmerWarehouseRequests(connection);
 
     connection.release();
     console.log('Database seeding completed successfully');
@@ -148,24 +160,38 @@ const seedWarehouseCategories = async (connection: PoolConnection): Promise<void
 
 const seedAdminUser = async (connection: PoolConnection): Promise<void> => {
   // Note: In production, use proper password hashing
-  const adminUser = {
-    role: 'super_admin',
-    username: 'admin',
-    email: 'admin@agriconnect.lk',
-    password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // admin123
-    first_name: 'System',
-    last_name: 'Administrator',
-    phone: '+94112345678',
-    language: 'en'
-  };
+  const adminUsers = [
+    {
+      role: 'super_admin',
+      username: 'admin',
+      email: 'admin@agriconnect.lk',
+      password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // admin123
+      first_name: 'System',
+      last_name: 'Administrator',
+      phone: '+94112345678',
+      language: 'en'
+    },
+    {
+      role: 'admin',
+      username: 'admin_user',
+      email: 'admin_user@agriconnect.lk',
+      password_hash: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 123456
+      first_name: 'Admin',
+      last_name: 'User',
+      phone: '+94112345679',
+      language: 'en'
+    }
+  ];
 
-  await connection.execute(
-    `INSERT IGNORE INTO users (role, username, email, password_hash, first_name, last_name, phone, language) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [adminUser.role, adminUser.username, adminUser.email, adminUser.password_hash, 
-     adminUser.first_name, adminUser.last_name, adminUser.phone, adminUser.language]
-  );
-  console.log('Admin user seeded');
+  for (const adminUser of adminUsers) {
+    await connection.execute(
+      `INSERT IGNORE INTO users (role, username, email, password_hash, first_name, last_name, phone, language) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [adminUser.role, adminUser.username, adminUser.email, adminUser.password_hash, 
+       adminUser.first_name, adminUser.last_name, adminUser.phone, adminUser.language]
+    );
+  }
+  console.log('Admin users seeded');
 };
 
 const seedFieldOfficers = async (connection: PoolConnection): Promise<void> => {
@@ -518,6 +544,9 @@ const seedEquipment = async (connection: PoolConnection): Promise<void> => {
     );
   }
   console.log('Equipment seeded');
+  
+  // Seed equipment rental requests
+  await seedEquipmentRentalRequests(connection);
 };
 
 const createContactRequestsTable = async (connection: PoolConnection): Promise<void> => {
@@ -560,36 +589,93 @@ const createContactRequestsTable = async (connection: PoolConnection): Promise<v
 
 const seedContactRequests = async (connection: PoolConnection): Promise<void> => {
   try {
-    // First, let's create a test farmer user if it doesn't exist
-    const testFarmer = {
-      role: 'farmer',
-      username: 'testfarmer',
-      email: 'testfarmer@example.com',
-      password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
-      first_name: 'Test',
-      last_name: 'Farmer',
-      phone: '+94123456789',
-      nic: '123456789012',
-      language: 'en'
-    };
+    // Create multiple farmer users if they don't exist
+    const farmers = [
+      {
+        role: 'farmer',
+        username: 'testfarmer',
+        email: 'testfarmer@example.com',
+        password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
+        first_name: 'Test',
+        last_name: 'Farmer',
+        phone: '+94123456789',
+        nic: '123456789012',
+        language: 'en'
+      },
+      {
+        role: 'farmer',
+        username: 'farmer1',
+        email: 'farmer1@example.com',
+        password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
+        first_name: 'John',
+        last_name: 'Doe',
+        phone: '+94123456790',
+        nic: '123456789013',
+        language: 'en'
+      },
+      {
+        role: 'farmer',
+        username: 'farmer2',
+        email: 'farmer2@example.com',
+        password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
+        first_name: 'Jane',
+        last_name: 'Smith',
+        phone: '+94123456791',
+        nic: '123456789014',
+        language: 'en'
+      },
+      {
+        role: 'farmer',
+        username: 'farmer3',
+        email: 'farmer3@example.com',
+        password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
+        first_name: 'Bob',
+        last_name: 'Johnson',
+        phone: '+94123456792',
+        nic: '123456789015',
+        language: 'en'
+      },
+      // Add the specific farmers that warehouse inventory data expects
+      {
+        role: 'farmer',
+        username: 'kamal_perera',
+        email: 'kamal.perera@example.com',
+        password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
+        first_name: 'Kamal',
+        last_name: 'Perera',
+        phone: '+94712345678',
+        nic: '123456789016',
+        language: 'en'
+      },
+      {
+        role: 'farmer',
+        username: 'sunil_fernando',
+        email: 'sunil.fernando@example.com',
+        password_hash: '$2a$10$qqaFeZMh9bKDFlpXyP6np.sPptIOW4w4swLBlroeLE.yQX7lVuMKS', // test123
+        first_name: 'Sunil',
+        last_name: 'Fernando',
+        phone: '+94712345679',
+        nic: '123456789017',
+        language: 'en'
+      }
+    ];
 
-    // Insert test farmer
-    const [farmerResult] = await connection.execute(
-      `INSERT IGNORE INTO users (role, username, email, password_hash, first_name, last_name, phone, nic, language) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [testFarmer.role, testFarmer.username, testFarmer.email, testFarmer.password_hash, 
-       testFarmer.first_name, testFarmer.last_name, testFarmer.phone, testFarmer.nic, testFarmer.language]
-    );
-
-    let farmerId = (farmerResult as any).insertId;
-    if (!farmerId) {
-      // If user already exists, get their ID
-      const [existingUser] = await connection.execute(
-        'SELECT id FROM users WHERE username = ?',
-        [testFarmer.username]
+    // Insert all farmers
+    for (const farmer of farmers) {
+      await connection.execute(
+        `INSERT IGNORE INTO users (role, username, email, password_hash, first_name, last_name, phone, nic, language) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [farmer.role, farmer.username, farmer.email, farmer.password_hash, 
+         farmer.first_name, farmer.last_name, farmer.phone, farmer.nic, farmer.language]
       );
-      farmerId = (existingUser as any[])[0]?.id;
     }
+
+    // Get the first farmer's ID for contact requests
+    const [existingUser] = await connection.execute(
+      'SELECT id FROM users WHERE username = ?',
+      [farmers[0].username]
+    );
+    const farmerId = (existingUser as any[])[0]?.id;
 
     if (farmerId) {
       // Create sample contact requests
@@ -630,6 +716,790 @@ const seedContactRequests = async (connection: PoolConnection): Promise<void> =>
     }
   } catch (error) {
           console.error('Failed to seed contact requests:', error);
+  }
+};
+
+const seedMarketItems = async (connection: PoolConnection): Promise<void> => {
+  try {
+    const marketItems = [
+      { name: 'Rice', description: 'White rice, long grain', category: 'Grains', unit: 'kg' },
+      { name: 'Wheat', description: 'Whole wheat grain', category: 'Grains', unit: 'kg' },
+      { name: 'Corn', description: 'Yellow corn kernels', category: 'Grains', unit: 'kg' },
+      { name: 'Potatoes', description: 'Fresh potatoes', category: 'Vegetables', unit: 'kg' },
+      { name: 'Tomatoes', description: 'Fresh red tomatoes', category: 'Vegetables', unit: 'kg' },
+      { name: 'Onions', description: 'Fresh onions', category: 'Vegetables', unit: 'kg' },
+      { name: 'Carrots', description: 'Fresh carrots', category: 'Vegetables', unit: 'kg' },
+      { name: 'Cabbage', description: 'Fresh green cabbage', category: 'Vegetables', unit: 'kg' },
+      { name: 'Bananas', description: 'Fresh yellow bananas', category: 'Fruits', unit: 'kg' },
+      { name: 'Oranges', description: 'Fresh oranges', category: 'Fruits', unit: 'kg' },
+      { name: 'Apples', description: 'Fresh red apples', category: 'Fruits', unit: 'kg' },
+      { name: 'Mangoes', description: 'Fresh ripe mangoes', category: 'Fruits', unit: 'kg' },
+      { name: 'Tea', description: 'Black tea leaves', category: 'Beverages', unit: 'kg' },
+      { name: 'Coffee', description: 'Green coffee beans', category: 'Beverages', unit: 'kg' },
+      { name: 'Sugar', description: 'White refined sugar', category: 'Sweeteners', unit: 'kg' },
+      { name: 'Salt', description: 'Refined table salt', category: 'Seasonings', unit: 'kg' },
+      { name: 'Chicken', description: 'Fresh chicken meat', category: 'Meat', unit: 'kg' },
+      { name: 'Beef', description: 'Fresh beef meat', category: 'Meat', unit: 'kg' },
+      { name: 'Fish', description: 'Fresh fish', category: 'Seafood', unit: 'kg' },
+      { name: 'Eggs', description: 'Fresh chicken eggs', category: 'Dairy', unit: 'dozen' },
+      { name: 'Milk', description: 'Fresh cow milk', category: 'Dairy', unit: 'liter' },
+      { name: 'Cheese', description: 'Fresh cheese', category: 'Dairy', unit: 'kg' },
+      { name: 'Butter', description: 'Fresh butter', category: 'Dairy', unit: 'kg' },
+      { name: 'Oil', description: 'Cooking oil', category: 'Oils', unit: 'liter' },
+      { name: 'Ghee', description: 'Clarified butter', category: 'Oils', unit: 'kg' }
+    ];
+
+    for (const item of marketItems) {
+      await connection.execute(
+        `INSERT IGNORE INTO market_items (name, description, category, unit, is_active) 
+         VALUES (?, ?, ?, ?, TRUE)`,
+        [item.name, item.description, item.category, item.unit]
+      );
+    }
+    console.log('Market items seeded');
+  } catch (error) {
+    console.error('Failed to seed market prices:', error);
+  }
+};
+
+const seedMarketPrices = async (connection: PoolConnection): Promise<void> => {
+  try {
+    // Get all market item IDs
+    const [items] = await connection.execute('SELECT id FROM market_items');
+    const itemIds = (items as any[]).map(row => row.id);
+
+    if (itemIds.length === 0) {
+      console.log('No market items found, skipping market prices seeding');
+      return;
+    }
+
+    // Sample prices for each item
+    const samplePrices = [
+      120.00, 95.00, 85.00, 45.00, 60.00, 35.00, 40.00, 30.00, 80.00, 90.00,
+      120.00, 150.00, 200.00, 350.00, 180.00, 25.00, 450.00, 650.00, 400.00, 180.00,
+      120.00, 800.00, 1200.00, 200.00, 800.00
+    ];
+
+    // Insert sample prices for each item
+    for (let i = 0; i < itemIds.length; i++) {
+      const itemId = itemIds[i];
+      const price = samplePrices[i] || 100.00; // Default price if not in sample
+
+      await connection.execute(
+        `INSERT IGNORE INTO market_prices (market_item_id, current_price, price_date, source, notes) 
+         VALUES (?, ?, CURDATE(), 'admin', 'Initial market price')`,
+        [itemId, price]
+      );
+    }
+    console.log('Market prices seeded');
+  } catch (error) {
+    console.error('Failed to seed market prices:', error);
+  }
+};
+
+const seedEquipmentRentalRequests = async (connection: PoolConnection): Promise<void> => {
+  try {
+    // Get farmer IDs dynamically to avoid hardcoded IDs
+    const [kamalUser] = await connection.execute('SELECT id FROM users WHERE username = ?', ['kamal_perera']);
+    const [sunilUser] = await connection.execute('SELECT id FROM users WHERE username = ?', ['sunil_fernando']);
+    const [nimalUser] = await connection.execute('SELECT id FROM users WHERE username = ?', ['farmer1']);
+    
+    const kamalId = (kamalUser as any[])[0]?.id;
+    const sunilId = (sunilUser as any[])[0]?.id;
+    const nimalId = (nimalUser as any[])[0]?.id;
+
+    const rentalRequests = [
+      {
+        farmer_id: kamalId,
+        equipment_id: 1,
+        start_date: '2025-08-20',
+        end_date: '2025-08-22',
+        rental_duration: 3,
+        total_amount: 8000.00,
+        delivery_fee: 500.00,
+        security_deposit: 10000.00,
+        receiver_name: 'Kamal Perera',
+        receiver_phone: '+94711923774',
+        delivery_address: '123 Rice Farm Road, Colombo District, Western Province',
+        delivery_latitude: 6.9271,
+        delivery_longitude: 79.8612,
+        additional_notes: 'Need tractor for land preparation. Small area, mini tractor preferred.',
+        status: 'pending'
+      },
+      {
+        farmer_id: sunilId,
+        equipment_id: 3,
+        start_date: '2025-08-25',
+        end_date: '2025-08-26',
+        rental_duration: 2,
+        total_amount: 8000.00,
+        delivery_fee: 1000.00,
+        security_deposit: 20000.00,
+        receiver_name: 'Sunil Fernando',
+        receiver_phone: '+94712345679',
+        delivery_address: '456 Vegetable Garden, Gampaha District, Western Province',
+        delivery_latitude: 7.0841,
+        delivery_longitude: 79.9915,
+        additional_notes: 'Rice harvesting needed. Field is about 0.8 acres.',
+        status: 'pending'
+      },
+      {
+        farmer_id: nimalId,
+        equipment_id: 5,
+        start_date: '2025-08-18',
+        end_date: '2025-08-19',
+        rental_duration: 2,
+        total_amount: 3600.00,
+        delivery_fee: 200.00,
+        security_deposit: 3000.00,
+        receiver_name: 'Nimal Silva',
+        receiver_phone: '+94712345680',
+        delivery_address: '789 Tea Estate, Kalutara District, Western Province',
+        delivery_latitude: 6.5833,
+        delivery_longitude: 79.9593,
+        additional_notes: 'Planting new tea saplings. Need precision planter.',
+        status: 'approved',
+        admin_notes: 'Request approved. Equipment will be delivered on time.'
+      },
+      {
+        farmer_id: kamalId,
+        equipment_id: 2,
+        start_date: '2025-08-10',
+        end_date: '2025-08-12',
+        rental_duration: 3,
+        total_amount: 10500.00,
+        delivery_fee: 800.00,
+        security_deposit: 15000.00,
+        receiver_name: 'Kamal Perera',
+        receiver_phone: '+94711923774',
+        delivery_address: '123 Rice Farm Road, Colombo District, Western Province',
+        delivery_latitude: 6.9271,
+        delivery_longitude: 79.8612,
+        additional_notes: 'Large area plowing completed successfully.',
+        status: 'completed',
+        admin_notes: 'Equipment returned in good condition. Payment received.'
+      },
+      {
+        farmer_id: sunilId,
+        equipment_id: 7,
+        start_date: '2025-08-30',
+        end_date: '2025-09-02',
+        rental_duration: 4,
+        total_amount: 2400.00,
+        delivery_fee: 100.00,
+        security_deposit: 1500.00,
+        receiver_name: 'Sunil Fernando',
+        receiver_phone: '+94712345679',
+        delivery_address: '456 Vegetable Garden, Gampaha District, Western Province',
+        delivery_latitude: 7.0841,
+        delivery_longitude: 79.9915,
+        additional_notes: 'Need irrigation system for new vegetable plot.',
+        status: 'rejected',
+        admin_notes: 'Equipment not available for requested dates. Please check alternative dates.'
+      }
+    ];
+
+    for (const request of rentalRequests) {
+      await connection.execute(
+        `INSERT IGNORE INTO equipment_rental_requests (
+          farmer_id, equipment_id, start_date, end_date, rental_duration, total_amount,
+          delivery_fee, security_deposit, receiver_name, receiver_phone, delivery_address, 
+          delivery_latitude, delivery_longitude, additional_notes, status, admin_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          request.farmer_id, request.equipment_id, request.start_date, request.end_date,
+          request.rental_duration, request.total_amount, request.delivery_fee, request.security_deposit,
+          request.receiver_name, request.receiver_phone, request.delivery_address, request.delivery_latitude, request.delivery_longitude,
+          request.additional_notes, request.status, request.admin_notes
+        ]
+      );
+    }
+    console.log('Equipment rental requests seeded');
+  } catch (error) {
+    console.error('Failed to seed equipment rental requests:', error);
+  }
+};
+
+const seedWarehouseInventory = async (connection: PoolConnection): Promise<void> => {
+  try {
+    // Get farmer IDs dynamically to avoid hardcoded IDs
+    const [kamalUser] = await connection.execute('SELECT id FROM users WHERE username = ?', ['kamal_perera']);
+    const [sunilUser] = await connection.execute('SELECT id FROM users WHERE username = ?', ['sunil_fernando']);
+    
+    const kamalId = (kamalUser as any[])[0]?.id;
+    const sunilId = (sunilUser as any[])[0]?.id;
+
+    if (!kamalId || !sunilId) {
+      console.log('Farmers not found, skipping warehouse inventory seeding');
+      return;
+    }
+
+    const inventoryItems = [
+      // Rice Storage Items
+      {
+        warehouse_id: 1,
+        item_name: 'Basmati Rice',
+        quantity: 5000.00,
+        location: 'Section A, Rack 1',
+        stored_date: '2025-08-01',
+        product_owner: 'Kamal Perera',
+        item_condition: 'good',
+        expiry_date: '2025-11-01',
+        notes: 'Premium quality basmati rice, stored in climate-controlled section',
+        farmer_id: kamalId,
+        farmer_name: 'Kamal Perera',
+        farmer_phone: '+94712345678',
+        storage_type: 'long_term',
+        storage_duration_days: 90,
+        current_market_price: 180.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      {
+        warehouse_id: 1,
+        item_name: 'Samba Rice',
+        quantity: 3000.00,
+        location: 'Section A, Rack 2',
+        stored_date: '2025-08-05',
+        product_owner: 'Sunil Fernando',
+        item_condition: 'good',
+        expiry_date: '2025-10-05',
+        notes: 'Local samba rice variety, good for daily consumption',
+        farmer_id: sunilId,
+        farmer_name: 'Sunil Fernando',
+        farmer_phone: '+94712345679',
+        storage_type: 'temporary',
+        storage_duration_days: 60,
+        current_market_price: 120.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'notify_farmer'
+      },
+      {
+        warehouse_id: 1,
+        item_name: 'Red Rice',
+        quantity: 2000.00,
+        location: 'Section A, Rack 3',
+        stored_date: '2025-08-10',
+        product_owner: 'Kamal Perera',
+        item_condition: 'moderate',
+        expiry_date: '2025-09-10',
+        notes: 'Organic red rice, needs monitoring for moisture',
+        farmer_id: kamalId,
+        farmer_name: 'Kamal Perera',
+        farmer_phone: '+94712345678',
+        storage_type: 'temporary',
+        storage_duration_days: 30,
+        current_market_price: 200.00,
+        auto_sell_on_expiry: false,
+        expiry_action: 'manual_handling'
+      },
+      // Vegetable Storage Items
+      {
+        warehouse_id: 1,
+        item_name: 'Potatoes',
+        quantity: 1500.00,
+        location: 'Section B, Rack 1',
+        stored_date: '2025-08-02',
+        product_owner: 'Sunil Fernando',
+        item_condition: 'good',
+        expiry_date: '2025-09-02',
+        notes: 'Fresh potatoes, stored in cool section',
+        farmer_id: sunilId,
+        farmer_name: 'Sunil Fernando',
+        farmer_phone: '+94712345679',
+        storage_type: 'temporary',
+        storage_duration_days: 30,
+        current_market_price: 80.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      {
+        warehouse_id: 1,
+        item_name: 'Onions',
+        quantity: 800.00,
+        location: 'Section B, Rack 2',
+        stored_date: '2025-08-03',
+        product_owner: 'Kamal Perera',
+        item_condition: 'good',
+        expiry_date: '2025-09-03',
+        notes: 'Large onions, good quality',
+        farmer_id: kamalId,
+        farmer_name: 'Kamal Perera',
+        farmer_phone: '+94712345678',
+        storage_type: 'temporary',
+        storage_duration_days: 30,
+        current_market_price: 60.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      // Grain Storage Items
+      {
+        warehouse_id: 1,
+        item_name: 'Wheat',
+        quantity: 4000.00,
+        location: 'Section C, Rack 1',
+        stored_date: '2025-07-15',
+        product_owner: 'Kamal Perera',
+        item_condition: 'good',
+        expiry_date: '2025-12-15',
+        notes: 'High-quality wheat for flour production',
+        farmer_id: kamalId,
+        farmer_name: 'Kamal Perera',
+        farmer_phone: '+94712345678',
+        storage_type: 'long_term',
+        storage_duration_days: 150,
+        current_market_price: 150.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      {
+        warehouse_id: 1,
+        item_name: 'Corn',
+        quantity: 2500.00,
+        location: 'Section C, Rack 2',
+        stored_date: '2025-07-20',
+        product_owner: 'Sunil Fernando',
+        item_condition: 'good',
+        expiry_date: '2025-11-20',
+        notes: 'Yellow corn, good for animal feed',
+        farmer_id: sunilId,
+        farmer_name: 'Sunil Fernando',
+        farmer_phone: '+94712345679',
+        storage_type: 'long_term',
+        storage_duration_days: 120,
+        current_market_price: 90.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      // Spice Storage Items
+      {
+        warehouse_id: 1,
+        item_name: 'Cinnamon',
+        quantity: 500.00,
+        location: 'Section D, Rack 1',
+        stored_date: '2025-08-01',
+        product_owner: 'Sunil Fernando',
+        item_condition: 'good',
+        expiry_date: '2026-02-01',
+        notes: 'Premium Ceylon cinnamon, long shelf life',
+        farmer_id: sunilId,
+        farmer_name: 'Sunil Fernando',
+        farmer_phone: '+94712345679',
+        storage_type: 'long_term',
+        storage_duration_days: 180,
+        current_market_price: 800.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      // Expiring Soon Items (for testing expiry functionality)
+      {
+        warehouse_id: 1,
+        item_name: 'Fresh Tomatoes',
+        quantity: 300.00,
+        location: 'Section F, Rack 1',
+        stored_date: '2025-08-01',
+        product_owner: 'Sunil Fernando',
+        item_condition: 'moderate',
+        expiry_date: '2025-08-21',
+        notes: 'Fresh tomatoes, need quick sale',
+        farmer_id: sunilId,
+        farmer_name: 'Sunil Fernando',
+        farmer_phone: '+94712345679',
+        storage_type: 'temporary',
+        storage_duration_days: 20,
+        current_market_price: 120.00,
+        auto_sell_on_expiry: true,
+        expiry_action: 'auto_sell'
+      },
+      // Expired Items (for testing expiry functionality)
+      {
+        warehouse_id: 1,
+        item_name: 'Old Potatoes',
+        quantity: 500.00,
+        location: 'Section G, Rack 1',
+        stored_date: '2025-07-01',
+        product_owner: 'Kamal Perera',
+        item_condition: 'poor',
+        expiry_date: '2025-07-31',
+        notes: 'Expired potatoes, need disposal',
+        farmer_id: kamalId,
+        farmer_name: 'Kamal Perera',
+        farmer_phone: '+94712345678',
+        storage_type: 'temporary',
+        storage_duration_days: 30,
+        current_market_price: 0.00,
+        auto_sell_on_expiry: false,
+        expiry_action: 'manual_handling'
+      }
+    ];
+
+    for (const item of inventoryItems) {
+      await connection.execute(
+        `INSERT IGNORE INTO warehouse_inventory (
+          warehouse_id, item_name, quantity, location, stored_date, product_owner,
+          item_condition, expiry_date, notes, farmer_id, farmer_name, farmer_phone,
+          storage_type, storage_duration_days, current_market_price, auto_sell_on_expiry, expiry_action
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          item.warehouse_id, item.item_name, item.quantity, item.location, item.stored_date,
+          item.product_owner, item.item_condition, item.expiry_date, item.notes, item.farmer_id,
+          item.farmer_name, item.farmer_phone, item.storage_type, item.storage_duration_days,
+          item.current_market_price, item.auto_sell_on_expiry, item.expiry_action
+        ]
+      );
+    }
+    console.log('Warehouse inventory seeded');
+  } catch (error) {
+    console.error('Failed to seed warehouse inventory:', error);
+  }
+};
+
+const seedFarmerWarehouseRequests = async (connection: PoolConnection): Promise<void> => {
+  try {
+    // Get farmer IDs
+    const [kamalResult] = await connection.execute('SELECT id FROM users WHERE username = ?', ['kamal_perera']);
+    const [sunilResult] = await connection.execute('SELECT id FROM users WHERE username = ?', ['sunil_fernando']);
+    const [nimalResult] = await connection.execute('SELECT id FROM users WHERE username = ?', ['farmer3']);
+    const [ranjithResult] = await connection.execute('SELECT id FROM users WHERE username = ?', ['farmer4']);
+    const [lalithResult] = await connection.execute('SELECT id FROM users WHERE username = ?', ['farmer5']);
+    
+    const kamalId = (kamalResult as any[])[0]?.id;
+    const sunilId = (sunilResult as any[])[0]?.id;
+    const nimalId = (nimalResult as any[])[0]?.id;
+    const ranjithId = (ranjithResult as any[])[0]?.id;
+    const lalithId = (lalithResult as any[])[0]?.id;
+
+    // Get admin user ID
+    const [adminResult] = await connection.execute('SELECT id FROM users WHERE role = ?', ['admin']);
+    const adminId = (adminResult as any[])[0]?.id;
+
+    if (!kamalId || !sunilId || !nimalId || !ranjithId || !lalithId || !adminId) {
+      console.log('Some required users not found, skipping farmer warehouse requests seeding');
+      return;
+    }
+
+    const requests = [
+      // Pending Requests
+      {
+        farmer_id: kamalId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Basmati Rice',
+        quantity: 5000.00,
+        storage_duration_days: 90,
+        storage_requirements: 'Climate controlled storage, humidity monitoring required',
+        preferred_dates: '2025-08-20 to 2025-08-25',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-15 10:00:00'
+      },
+      {
+        farmer_id: sunilId,
+        warehouse_id: 2,
+        request_type: 'storage',
+        item_name: 'Fresh Vegetables',
+        quantity: 2000.00,
+        storage_duration_days: 30,
+        storage_requirements: 'Cold storage, temperature 2-4°C, regular inspection needed',
+        preferred_dates: '2025-08-22 to 2025-08-24',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-15 11:30:00'
+      },
+      {
+        farmer_id: nimalId,
+        warehouse_id: 3,
+        request_type: 'storage',
+        item_name: 'Organic Tea Leaves',
+        quantity: 1500.00,
+        storage_duration_days: 60,
+        storage_requirements: 'Dry storage, away from direct sunlight, moisture control',
+        preferred_dates: '2025-08-25 to 2025-08-27',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-15 14:15:00'
+      },
+      {
+        farmer_id: ranjithId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Wheat Grain',
+        quantity: 3000.00,
+        storage_duration_days: 120,
+        storage_requirements: 'Standard grain storage, pest control measures',
+        preferred_dates: '2025-08-28 to 2025-08-30',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-15 16:45:00'
+      },
+
+      // Approved Requests
+      {
+        farmer_id: kamalId,
+        warehouse_id: 2,
+        request_type: 'storage',
+        item_name: 'Red Rice',
+        quantity: 2500.00,
+        storage_duration_days: 45,
+        storage_requirements: 'Temperature controlled, regular quality checks',
+        preferred_dates: '2025-08-10 to 2025-08-12',
+        status: 'approved',
+        admin_notes: 'Approved for cold storage. Monitor temperature regularly.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-08-12 09:00:00',
+        created_at: '2025-08-10 08:30:00'
+      },
+      {
+        farmer_id: sunilId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Corn Grain',
+        quantity: 4000.00,
+        storage_duration_days: 90,
+        storage_requirements: 'Standard grain storage, ventilation required',
+        preferred_dates: '2025-08-08 to 2025-08-10',
+        status: 'approved',
+        admin_notes: 'Approved for grain storage. Ensure proper ventilation.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-08-10 14:30:00',
+        created_at: '2025-08-08 10:15:00'
+      },
+      {
+        farmer_id: lalithId,
+        warehouse_id: 3,
+        request_type: 'storage',
+        item_name: 'Spices Collection',
+        quantity: 800.00,
+        storage_duration_days: 180,
+        storage_requirements: 'Dry storage, airtight containers, away from strong odors',
+        preferred_dates: '2025-08-05 to 2025-08-07',
+        status: 'approved',
+        admin_notes: 'Approved for general storage. Use airtight containers.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-08-07 11:20:00',
+        created_at: '2025-08-05 13:45:00'
+      },
+
+      // Rejected Requests
+      {
+        farmer_id: nimalId,
+        warehouse_id: 2,
+        request_type: 'storage',
+        item_name: 'Fresh Fruits',
+        quantity: 1200.00,
+        storage_duration_days: 20,
+        storage_requirements: 'Cold storage, daily inspection required',
+        preferred_dates: '2025-08-12 to 2025-08-14',
+        status: 'rejected',
+        admin_notes: 'Cold storage capacity full for requested dates.',
+        rejection_reason: 'Insufficient cold storage capacity for the requested period. Please try alternative dates.',
+        approved_by: adminId,
+        approved_at: '2025-08-14 15:30:00',
+        created_at: '2025-08-12 09:20:00'
+      },
+      {
+        farmer_id: ranjithId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Pulses Mix',
+        quantity: 1800.00,
+        storage_duration_days: 60,
+        storage_requirements: 'Standard storage, pest control',
+        preferred_dates: '2025-08-15 to 2025-08-17',
+        status: 'rejected',
+        admin_notes: 'Warehouse undergoing maintenance.',
+        rejection_reason: 'Warehouse temporarily unavailable due to scheduled maintenance.',
+        approved_by: adminId,
+        approved_at: '2025-08-17 10:15:00',
+        created_at: '2025-08-15 16:30:00'
+      },
+
+      // Completed Requests
+      {
+        farmer_id: kamalId,
+        warehouse_id: 3,
+        request_type: 'storage',
+        item_name: 'Green Tea',
+        quantity: 1000.00,
+        storage_duration_days: 45,
+        storage_requirements: 'Dry storage, away from moisture',
+        preferred_dates: '2025-07-20 to 2025-07-22',
+        status: 'completed',
+        admin_notes: 'Successfully completed. All items stored properly.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-07-22 08:00:00',
+        created_at: '2025-07-20 10:00:00'
+      },
+      {
+        farmer_id: sunilId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Barley Grain',
+        quantity: 2200.00,
+        storage_duration_days: 90,
+        storage_requirements: 'Standard grain storage',
+        preferred_dates: '2025-07-15 to 2025-07-17',
+        status: 'completed',
+        admin_notes: 'Storage completed successfully. Regular monitoring in place.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-07-17 14:00:00',
+        created_at: '2025-07-15 11:30:00'
+      },
+
+      // Retrieval Requests
+      {
+        farmer_id: kamalId,
+        warehouse_id: 2,
+        request_type: 'retrieval',
+        item_name: 'Basmati Rice',
+        quantity: 2000.00,
+        storage_duration_days: 0,
+        storage_requirements: 'Retrieve 2000kg from existing storage',
+        preferred_dates: '2025-08-18 to 2025-08-19',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-16 09:00:00'
+      },
+      {
+        farmer_id: sunilId,
+        warehouse_id: 1,
+        request_type: 'retrieval',
+        item_name: 'Wheat Grain',
+        quantity: 1500.00,
+        storage_duration_days: 0,
+        storage_requirements: 'Retrieve 1500kg for immediate sale',
+        preferred_dates: '2025-08-20 to 2025-08-21',
+        status: 'approved',
+        admin_notes: 'Approved for retrieval. Ensure proper documentation.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-08-21 10:00:00',
+        created_at: '2025-08-18 14:30:00'
+      },
+
+      // Inspection Requests
+      {
+        farmer_id: nimalId,
+        warehouse_id: 2,
+        request_type: 'inspection',
+        item_name: 'Fresh Vegetables',
+        quantity: 0.00,
+        storage_duration_days: 0,
+        storage_requirements: 'Inspect current storage conditions and quality',
+        preferred_dates: '2025-08-25 to 2025-08-25',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-17 16:00:00'
+      },
+      {
+        farmer_id: lalithId,
+        warehouse_id: 1,
+        request_type: 'inspection',
+        item_name: 'Grain Storage',
+        quantity: 0.00,
+        storage_duration_days: 0,
+        storage_requirements: 'Quality inspection of stored grains',
+        preferred_dates: '2025-08-26 to 2025-08-26',
+        status: 'approved',
+        admin_notes: 'Approved for inspection. Warehouse staff will assist.',
+        rejection_reason: null,
+        approved_by: adminId,
+        approved_at: '2025-08-26 09:00:00',
+        created_at: '2025-08-18 11:15:00'
+      },
+
+      // Additional Storage Requests
+      {
+        farmer_id: kamalId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Premium Rice',
+        quantity: 3500.00,
+        storage_duration_days: 75,
+        storage_requirements: 'Climate controlled, premium quality storage',
+        preferred_dates: '2025-08-30 to 2025-09-01',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-19 10:30:00'
+      },
+      {
+        farmer_id: sunilId,
+        warehouse_id: 3,
+        request_type: 'storage',
+        item_name: 'Herbal Collection',
+        quantity: 600.00,
+        storage_duration_days: 120,
+        storage_requirements: 'Dry storage, away from direct sunlight',
+        preferred_dates: '2025-09-02 to 2025-09-04',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-19 15:45:00'
+      },
+      {
+        farmer_id: nimalId,
+        warehouse_id: 1,
+        request_type: 'storage',
+        item_name: 'Mixed Grains',
+        quantity: 2800.00,
+        storage_duration_days: 90,
+        storage_requirements: 'Standard grain storage, pest control',
+        preferred_dates: '2025-09-05 to 2025-09-07',
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        approved_by: null,
+        approved_at: null,
+        created_at: '2025-08-20 08:20:00'
+      }
+    ];
+
+    for (const request of requests) {
+      await connection.execute(
+        `INSERT IGNORE INTO farmer_warehouse_requests (
+          farmer_id, warehouse_id, request_type, item_name, quantity, storage_duration_days,
+          storage_requirements, preferred_dates, status, admin_notes, rejection_reason,
+          approved_by, approved_at, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          request.farmer_id, request.warehouse_id, request.request_type, request.item_name,
+          request.quantity, request.storage_duration_days, request.storage_requirements,
+          request.preferred_dates, request.status, request.admin_notes, request.rejection_reason,
+          request.approved_by, request.approved_at, request.created_at
+        ]
+      );
+    }
+    console.log('Farmer warehouse requests seeded');
+  } catch (error) {
+    console.error('Failed to seed farmer warehouse requests:', error);
   }
 };
 

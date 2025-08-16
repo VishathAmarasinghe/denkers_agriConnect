@@ -141,7 +141,7 @@ class WarehouseInventoryModel {
   }
 
   /**
-   * Search inventory items with filters and pagination
+   * Search inventory items with filters
    */
   static async search(params: WarehouseInventorySearchParams): Promise<PaginatedResponse<WarehouseInventoryType>> {
     const connection = await pool.getConnection();
@@ -159,6 +159,11 @@ class WarehouseInventoryModel {
         queryParams.push(parseInt(String(params.warehouse_id)));
       }
 
+      if (params.farmer_id) {
+        whereClause += ' AND wi.farmer_id = ?';
+        queryParams.push(parseInt(String(params.farmer_id)));
+      }
+
       if (params.item_name) {
         whereClause += ' AND wi.item_name LIKE ?';
         queryParams.push(`%${params.item_name}%`);
@@ -174,6 +179,11 @@ class WarehouseInventoryModel {
         queryParams.push(`%${params.product_owner}%`);
       }
 
+      if (params.storage_type) {
+        whereClause += ' AND wi.storage_type = ?';
+        queryParams.push(params.storage_type);
+      }
+
       // Get total count
       const [countResult] = await connection.execute(`
         SELECT COUNT(*) as total 
@@ -184,17 +194,18 @@ class WarehouseInventoryModel {
       const total = (countResult as any[])[0].total;
       const totalPages = Math.ceil(total / limit);
 
-      // Get inventory items with pagination
-      const [rows] = await connection.execute(`
+      // Get inventory items with pagination - use query() for LIMIT/OFFSET
+      const [rows] = await connection.query(`
         SELECT 
           wi.*,
-          w.name as warehouse_name
+          w.name as warehouse_name,
+          w.address as warehouse_address
         FROM warehouse_inventory wi
         LEFT JOIN warehouses w ON wi.warehouse_id = w.id
         ${whereClause}
         ORDER BY wi.stored_date DESC, wi.created_at DESC
-        LIMIT ? OFFSET ?
-      `, [...queryParams, limit, offset]);
+        LIMIT ${limit} OFFSET ${offset}
+      `, queryParams);
 
       const inventoryItems = (rows as any[]).map(row => this.mapRowToWarehouseInventory(row));
 
@@ -294,45 +305,7 @@ class WarehouseInventoryModel {
    * Get items by farmer
    */
   static async getByFarmer(farmerId: number, page: number = 1, limit: number = 10) {
-    const connection = await pool.getConnection();
-    try {
-      const offset = (page - 1) * limit;
-
-      // Get total count
-      const [countResult] = await connection.execute(`
-        SELECT COUNT(*) as total FROM warehouse_inventory WHERE farmer_id = ?
-      `, [farmerId]);
-
-      const total = (countResult as any[])[0].total;
-      const totalPages = Math.ceil(total / limit);
-
-      // Get items with pagination
-      const [rows] = await connection.execute(`
-        SELECT 
-          wi.*,
-          w.name as warehouse_name,
-          w.address as warehouse_address
-        FROM warehouse_inventory wi
-        LEFT JOIN warehouses w ON wi.warehouse_id = w.id
-        WHERE wi.farmer_id = ?
-        ORDER BY wi.stored_date DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `, [farmerId]);
-
-      const items = (rows as any[]).map(row => this.mapRowToWarehouseInventory(row));
-
-      return {
-        data: items,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages
-        }
-      };
-    } finally {
-      connection.release();
-    }
+    return this.search({ farmer_id: farmerId, page, limit });
   }
 
   /**
@@ -343,7 +316,6 @@ class WarehouseInventoryModel {
     try {
       const offset = (page - 1) * limit;
       let whereClause = '';
-      const params: any[] = [];
 
       switch (status) {
         case 'active':
@@ -363,13 +335,13 @@ class WarehouseInventoryModel {
       // Get total count
       const [countResult] = await connection.execute(`
         SELECT COUNT(*) as total FROM warehouse_inventory wi ${whereClause}
-      `, params);
+      `);
 
       const total = (countResult as any[])[0].total;
       const totalPages = Math.ceil(total / limit);
 
-      // Get items with pagination
-      const [rows] = await connection.execute(`
+      // Get items with pagination - use query() for LIMIT/OFFSET
+      const [rows] = await connection.query(`
         SELECT 
           wi.*,
           w.name as warehouse_name,
@@ -379,7 +351,7 @@ class WarehouseInventoryModel {
         ${whereClause}
         ORDER BY wi.expiry_date ASC, wi.stored_date DESC
         LIMIT ${limit} OFFSET ${offset}
-      `, params);
+      `);
 
       const items = (rows as any[]).map(row => this.mapRowToWarehouseInventory(row));
 
@@ -506,6 +478,15 @@ class WarehouseInventoryModel {
       item_condition: row.item_condition,
       expiry_date: row.expiry_date,
       notes: row.notes,
+      farmer_id: row.farmer_id,
+      farmer_name: row.farmer_name,
+      farmer_phone: row.farmer_phone,
+      storage_type: row.storage_type,
+      storage_duration_days: row.storage_duration_days,
+      current_market_price: row.current_market_price,
+      auto_sell_on_expiry: row.auto_sell_on_expiry,
+      expiry_action: row.expiry_action,
+      last_price_update: row.last_price_update,
       created_at: row.created_at,
       updated_at: row.updated_at
     };

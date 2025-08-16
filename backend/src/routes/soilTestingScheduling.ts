@@ -667,6 +667,42 @@ router.post('/schedules/:id/complete', authenticateToken, async (req: Request, r
 // ==================== SOIL TESTING REQUESTS BY ID ====================
 
 /**
+ * @route   GET /api/v1/soil-testing-scheduling/completed
+ * @desc    Get completed and approved soil testing requests (Public - for report creation)
+ * @access  Public
+ */
+router.get('/completed', async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+
+    const result = await SoilTestingSchedulingService.getAllRequests(page, limit);
+
+    if (result.success && result.data) {
+      // Filter for completed and approved requests
+      const availableRequests = result.data.data.filter((request: any) => 
+        request.status === 'completed' || request.status === 'approved'
+      );
+      
+      return ResponseService.success(res, {
+        data: availableRequests,
+        pagination: {
+          page,
+          limit,
+          total: availableRequests.length,
+          totalPages: Math.ceil(availableRequests.length / limit)
+        }
+      }, 'Available soil testing requests retrieved successfully');
+    } else {
+      return ResponseService.error(res, result.message, 400);
+    }
+  } catch (error) {
+    console.error('Get completed requests error:', error);
+    return ResponseService.error(res, 'Failed to retrieve completed requests. Please try again.', 500);
+  }
+});
+
+/**
  * @route   GET /api/v1/soil-testing-requests/:id
  * @desc    Get soil testing request by ID
  * @access  Private
@@ -723,6 +759,65 @@ router.put('/:id', authenticateToken, requireAdmin, async (req: Request, res: Re
   } catch (error) {
     console.error('Update soil testing request error:', error);
     return ResponseService.error(res, 'Failed to update soil testing request. Please try again.', 500);
+  }
+});
+
+/**
+ * @route   GET /api/v1/soil-testing/verify/:uniqueId
+ * @desc    Verify soil testing QR code (Field Officer)
+ * @access  Private
+ */
+router.get('/verify/:uniqueId', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const uniqueId = req.params.uniqueId;
+    
+    if (!uniqueId) {
+      return ResponseService.error(res, 'Unique ID is required', 400);
+    }
+
+    // Import QRCodeService here to avoid circular dependency
+    const QRCodeService = require('../services/qrCode').default;
+    const verificationData = QRCodeService.verifyQRCodeId(uniqueId);
+    
+    if (!verificationData) {
+      return ResponseService.error(res, 'Invalid QR code ID', 400);
+    }
+
+    // Get the schedule details
+    const result = await SoilTestingSchedulingService.getSchedule(verificationData.schedule_id);
+
+    if (!result.success || !result.data) {
+      return ResponseService.error(res, 'Soil testing schedule not found', 404);
+    }
+
+    const schedule = result.data;
+    
+    // Verify that the schedule belongs to the verified farmer
+    if (schedule.farmer_id !== verificationData.farmer_id) {
+      return ResponseService.error(res, 'QR code verification failed', 403);
+    }
+
+    // Return the verification data
+    return ResponseService.success(res, {
+      uniqueId,
+      schedule: {
+        id: schedule.id,
+        farmer_id: schedule.farmer_id,
+        soil_collection_center_id: schedule.soil_collection_center_id,
+        scheduled_date: schedule.scheduled_date,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        status: schedule.status,
+        farmer_phone: schedule.farmer_phone,
+        farmer_location_address: schedule.farmer_location_address
+      },
+      verified: true,
+      verification_timestamp: new Date().toISOString()
+    }, 'QR code verified successfully');
+
+  } catch (error) {
+    console.error('QR code verification error:', error);
+    return ResponseService.error(res, 'Failed to verify QR code. Please try again.', 500);
   }
 });
 

@@ -31,12 +31,14 @@ const initDatabase = async (): Promise<void> => {
     
     console.log('AgriConnect Database initialization completed successfully!');
     console.log('\nWhat was created:');
-    console.log('   • Users table with admin user');
+    console.log('   • Users table with admin users (admin, admin_user)');
     console.log('   • Locations table with Sri Lankan provinces and districts');
     console.log('   • Equipment categories and sample machines');
     console.log('   • Warehouse categories and sample warehouses');
     console.log('   • Field officers and soil collection centers');
     console.log('   • Sample market rates');
+    console.log('   • Market items with categories (Grains, Vegetables, Fruits, etc.)');
+    console.log('   • Sample market prices for all items');
     console.log('\nYou can now start the server with: npm start');
     
   } catch (error) {

@@ -1,3 +1,4 @@
+import { pool } from '../config/database';
 import FarmerWarehouseRequestModel from '../models/FarmerWarehouseRequest';
 import WarehouseInventoryModel from '../models/WarehouseInventory';
 import MarketPriceModel from '../models/MarketPrice';
@@ -67,10 +68,105 @@ class FarmerWarehouseService {
   }
 
   /**
+   * Get all warehouse requests (Admin only)
+   */
+  static async getAllRequests(page: number = 1, limit: number = 10, status?: string) {
+    return await FarmerWarehouseRequestModel.getAll(page, limit, status);
+  }
+
+  /**
    * Get farmer's storage items
    */
   static async getFarmerStorage(farmerId: number, page: number = 1, limit: number = 10) {
     return await WarehouseInventoryModel.getByFarmer(farmerId, page, limit);
+  }
+
+  /**
+   * Get all storage items (Admin only)
+   */
+  static async getAllStorage(page: number = 1, limit: number = 10) {
+    return await WarehouseInventoryModel.getAll(page, limit);
+  }
+
+  /**
+   * Get overall storage summary (Admin only)
+   */
+  static async getAllStorageSummary() {
+    const connection = await pool.getConnection();
+    try {
+      const [result] = await connection.execute(`
+        SELECT 
+          COUNT(*) as total_items,
+          SUM(quantity) as total_quantity,
+          COUNT(DISTINCT farmer_id) as total_farmers,
+          COUNT(DISTINCT warehouse_id) as total_warehouses
+        FROM warehouse_inventory
+        WHERE quantity > 0
+      `);
+      
+      return (result as any[])[0];
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * Get all expiring items (Admin only)
+   */
+  static async getAllExpiringItems(days: number = 30) {
+    return await WarehouseInventoryModel.getExpiringItems(days);
+  }
+
+  /**
+   * Get all expired items (Admin only)
+   */
+  static async getAllExpiredItems() {
+    return await WarehouseInventoryModel.getExpiredItems();
+  }
+
+  /**
+   * Get all notifications (Admin only)
+   */
+  static async getAllNotifications(page: number = 1, limit: number = 10) {
+    const connection = await pool.getConnection();
+    try {
+      const offset = (page - 1) * limit;
+
+      // Get total count
+      const [countResult] = await connection.execute(`
+        SELECT COUNT(*) as total FROM expiry_notifications
+      `);
+
+      const total = (countResult as any[])[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      // Get notifications with pagination
+      const [rows] = await connection.execute(`
+        SELECT 
+          en.*,
+          wi.item_name,
+          wi.farmer_id,
+          u.name as farmer_name,
+          u.phone as farmer_phone
+        FROM expiry_notifications en
+        LEFT JOIN warehouse_inventory wi ON en.warehouse_inventory_id = wi.id
+        LEFT JOIN users u ON wi.farmer_id = u.id
+        ORDER BY en.created_at DESC
+        LIMIT ? OFFSET ?
+      `, [limit, offset]);
+
+      return {
+        data: rows,
+        pagination: {
+          total,
+          totalPages,
+          currentPage: page,
+          limit
+        }
+      };
+    } finally {
+      connection.release();
+    }
   }
 
   /**
@@ -225,20 +321,29 @@ class FarmerWarehouseService {
    * Update market price for farmer's items
    */
   static async updateMarketPrice(itemName: string, newPrice: number, source: string = 'admin_update'): Promise<number> {
-    // Update market price
-    const priceId = await MarketPriceModel.upsertPrice({
-      item_name: itemName,
+    // Find the market item by name
+    const MarketItemModel = (await import('../models/MarketItem')).default;
+    const item = await MarketItemModel.findByName(itemName);
+    
+    if (!item) {
+      throw new Error('Market item not found');
+    }
+    
+    // Create or update the market price
+    const priceData = {
+      market_item_id: item.id,
       current_price: newPrice,
-      unit: 'kg', // Default unit
       price_date: new Date(),
       source,
-      notes: `Price updated to Rs. ${newPrice} per kg`
-    });
+      notes: `Price updated to Rs. ${newPrice} per ${item.unit}`
+    };
+    
+    const priceId = await MarketPriceModel.upsertPrice(priceData);
 
     // Update all inventory items with this item name
     const allItems = await WarehouseInventoryModel.search({ item_name: itemName, page: 1, limit: 1000 });
-    for (const item of allItems.data) {
-      await WarehouseInventoryModel.updateMarketPrice(item.id, newPrice);
+    for (const inventoryItem of allItems.data) {
+      await WarehouseInventoryModel.updateMarketPrice(inventoryItem.id, newPrice);
     }
 
     return priceId;
@@ -364,9 +469,9 @@ class FarmerWarehouseService {
   /**
    * Get market prices for items
    */
-  static async getMarketPrices(itemName?: string, page: number = 1, limit: number = 10) {
-    if (itemName) {
-      return await MarketPriceModel.searchByItem(itemName, page, limit);
+  static async getMarketPrices(marketItemId?: number, page: number = 1, limit: number = 10) {
+    if (marketItemId) {
+      return await MarketPriceModel.searchByMarketItemId(marketItemId, page, limit);
     }
     return await MarketPriceModel.getAll(page, limit);
   }
@@ -376,6 +481,34 @@ class FarmerWarehouseService {
    */
   static async getPriceHistory(itemName: string, days: number = 30) {
     return await MarketPriceModel.getPriceHistory(itemName, days);
+  }
+
+  /**
+   * Create a new market price
+   */
+  static async createMarketPrice(data: any): Promise<number> {
+    // Validate that the market item exists
+    const MarketItemModel = (await import('../models/MarketItem')).default;
+    const item = await MarketItemModel.findById(data.market_item_id);
+    if (!item) {
+      throw new Error('Market item not found');
+    }
+    
+    return await MarketPriceModel.create(data);
+  }
+
+  /**
+   * Update market price by ID
+   */
+  static async updateMarketPriceById(id: number, data: any): Promise<boolean> {
+    return await MarketPriceModel.update(id, data);
+  }
+
+  /**
+   * Delete market price by ID
+   */
+  static async deleteMarketPrice(id: number): Promise<boolean> {
+    return await MarketPriceModel.delete(id);
   }
 
   /**

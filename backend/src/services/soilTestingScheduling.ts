@@ -17,6 +17,7 @@ import {
   SoilTestingScheduleSearchParams,
   AvailableTimeSlotsResponse,
   QRCodeData,
+  EnhancedQRCodeData,
   PaginatedResponse,
   ApiResponse
 } from '../types';
@@ -26,6 +27,7 @@ import FieldOfficerModel from '../models/FieldOfficer';
 import SoilTestingScheduleModel from '../models/SoilTestingSchedule';
 import ResponseService from './response';
 import NotificationService from './notification';
+import QRCodeService from './qrCode';
 
 class SoilTestingSchedulingService {
   // ==================== SOIL TESTING REQUESTS ====================
@@ -112,7 +114,72 @@ class SoilTestingSchedulingService {
       if (data.status === 'rejected' && data.rejection_reason) {
         await this.sendRejectionSMS(existingRequest.farmer_phone, data.rejection_reason);
       } else if (data.status === 'approved') {
-        await this.sendApprovalSMS(existingRequest.farmer_phone, data.approved_date, data.approved_start_time, data.approved_end_time);
+        // Create soil testing schedule when request is approved
+        try {
+          console.log('Creating soil testing schedule for approved request:', {
+            requestId: id,
+            farmerId: existingRequest.farmer_id,
+            centerId: existingRequest.soil_collection_center_id,
+            approvedDate: data.approved_date,
+            startTime: data.approved_start_time,
+            endTime: data.approved_end_time,
+            fieldOfficerId: data.field_officer_id
+          });
+
+          const scheduleData = {
+            soil_collection_center_id: existingRequest.soil_collection_center_id,
+            scheduled_date: data.approved_date!,
+            start_time: data.approved_start_time!,
+            end_time: data.approved_end_time!,
+            field_officer_id: data.field_officer_id!,
+            farmer_phone: existingRequest.farmer_phone,
+            farmer_location_address: existingRequest.farmer_location_address,
+            farmer_latitude: existingRequest.farmer_latitude,
+            farmer_longitude: existingRequest.farmer_longitude
+          };
+
+          console.log('Schedule data to create:', scheduleData);
+
+          const schedule = await SoilTestingScheduleModel.create(scheduleData, existingRequest.farmer_id);
+          console.log('Schedule created successfully:', schedule);
+          
+          // Generate QR code for the schedule
+          const qrCodeData: QRCodeData = {
+            schedule_id: schedule.id!,
+            farmer_id: schedule.farmer_id,
+            center_id: schedule.soil_collection_center_id,
+            scheduled_date: schedule.scheduled_date,
+            timestamp: new Date().toISOString()
+          };
+
+          console.log('Generating QR code for data:', qrCodeData);
+          const qrCodeResult = await this.generateQRCode(qrCodeData);
+          console.log('QR code generated:', qrCodeResult);
+
+          const enhancedQRData: EnhancedQRCodeData = {
+            ...qrCodeData,
+            uniqueId: qrCodeResult.uniqueId,
+            verificationUrl: qrCodeResult.verificationUrl
+          };
+
+          console.log('Updating QR code in database...');
+          await SoilTestingScheduleModel.updateQRCode(schedule.id!, qrCodeResult.qrCodeUrl, JSON.stringify(enhancedQRData));
+          console.log('QR code updated in database successfully');
+
+          // Send SMS with QR code and unique ID
+          console.log('Sending SMS with QR code...');
+          await this.sendScheduleConfirmationSMS(existingRequest.farmer_phone, schedule.scheduled_date, qrCodeResult.qrCodeUrl, qrCodeResult.uniqueId);
+          console.log('SMS sent successfully with QR code');
+
+        } catch (scheduleError) {
+          console.error('Failed to create schedule or send QR code:', scheduleError);
+          console.error('Error details:', {
+            message: scheduleError instanceof Error ? scheduleError.message : 'Unknown error',
+            stack: scheduleError instanceof Error ? scheduleError.stack : 'No stack trace'
+          });
+          // Still send approval SMS even if schedule creation fails
+          await this.sendApprovalSMS(existingRequest.farmer_phone, data.approved_date!, data.approved_start_time!, data.approved_end_time!);
+        }
       }
 
       return {
@@ -596,11 +663,16 @@ class SoilTestingSchedulingService {
         timestamp: new Date().toISOString()
       };
 
-      const qrCodeUrl = await this.generateQRCode(qrCodeData);
-      await SoilTestingScheduleModel.updateQRCode(schedule.id!, qrCodeUrl, JSON.stringify(qrCodeData));
+      const qrCodeResult = await this.generateQRCode(qrCodeData);
+      const enhancedQRData: EnhancedQRCodeData = {
+        ...qrCodeData,
+        uniqueId: qrCodeResult.uniqueId,
+        verificationUrl: qrCodeResult.verificationUrl
+      };
+      await SoilTestingScheduleModel.updateQRCode(schedule.id!, qrCodeResult.qrCodeUrl, JSON.stringify(enhancedQRData));
 
-      // Send SMS with QR code URL
-      await this.sendScheduleConfirmationSMS(data.farmer_phone, schedule.scheduled_date, qrCodeUrl);
+      // Send SMS with QR code URL and unique ID
+      await this.sendScheduleConfirmationSMS(data.farmer_phone, schedule.scheduled_date, qrCodeResult.qrCodeUrl, qrCodeResult.uniqueId);
 
       return {
         success: true,
@@ -773,11 +845,27 @@ class SoilTestingSchedulingService {
   /**
    * Generate QR code for schedule
    */
-  private async generateQRCode(data: QRCodeData): Promise<string> {
-    // This would integrate with a QR code generation service
-    // For now, return a placeholder URL
-    const qrCodeData = encodeURIComponent(JSON.stringify(data));
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrCodeData}`;
+  private async generateQRCode(data: QRCodeData): Promise<{ qrCodeUrl: string; uniqueId: string; verificationUrl: string }> {
+    try {
+      // Generate the QR code URL and verification data
+      const qrCodeUrl = QRCodeService.generateQRCodeURL(data);
+      const verificationData = QRCodeService.generateSoilTestingURL(data);
+      
+      return {
+        qrCodeUrl,
+        uniqueId: verificationData.uniqueId,
+        verificationUrl: verificationData.verificationUrl
+      };
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      // Fallback to simple text-based QR code
+      const fallbackId = QRCodeService.generateTextQRCode(data);
+      return {
+        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${fallbackId}`,
+        uniqueId: fallbackId,
+        verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/soil-verification/${fallbackId}`
+      };
+    }
   }
 
   /**
@@ -807,9 +895,9 @@ class SoilTestingSchedulingService {
   /**
    * Send schedule confirmation SMS
    */
-  private async sendScheduleConfirmationSMS(phone: string, date: string, qrCodeUrl: string): Promise<void> {
+  private async sendScheduleConfirmationSMS(phone: string, date: string, qrCodeUrl: string, uniqueId: string): Promise<void> {
     try {
-      const message = `Your soil testing has been scheduled for ${date}. QR Code: ${qrCodeUrl}. Please show this to the field officer.`;
+      const message = `Your soil testing has been scheduled for ${date}. QR Code: ${qrCodeUrl}. Unique ID: ${uniqueId}. Please show this to the field officer.`;
       await NotificationService.sendSMS({ recipient: phone, message });
     } catch (error) {
       console.error('Failed to send schedule confirmation SMS:', error);

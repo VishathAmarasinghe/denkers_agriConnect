@@ -7,6 +7,57 @@ import { pool } from '../config/database';
 const router = Router();
 
 /**
+ * @route   GET /api/v1/users/farmers
+ * @desc    Get all farmers (public)
+ * @access  Public
+ */
+router.get('/farmers', async (req: Request, res: Response) => {
+  try {
+    console.log('Farmers route called - starting simple test');
+    
+    const connection = await pool.getConnection();
+    console.log('Database connection obtained');
+    
+    try {
+      // Simple test - just get all users first
+      const [allUsers] = await connection.execute('SELECT id, username, role FROM users LIMIT 5');
+      console.log('All users (first 5):', allUsers);
+      
+      // Now try to get farmers specifically
+      const [farmers] = await connection.execute('SELECT id, username, role FROM users WHERE role = ?', ['farmer']);
+      console.log('Farmers found:', farmers);
+      
+      if ((farmers as any[]).length === 0) {
+        console.log('No farmers found - returning empty result');
+        return ResponseService.success(res, { data: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } }, 'No farmers found');
+      }
+      
+      // If we have farmers, get full details
+      const [fullFarmers] = await connection.execute(`
+        SELECT id, username, email, phone, nic, role, first_name, last_name, location_id, is_active, created_at, updated_at
+        FROM users WHERE role = ?
+        ORDER BY created_at DESC
+        LIMIT 100
+      `, ['farmer']);
+      
+      console.log('Full farmers data:', fullFarmers);
+      
+      return ResponseService.success(res, { 
+        data: fullFarmers, 
+        pagination: { page: 1, limit: 100, total: (farmers as any[]).length, totalPages: 1 } 
+      }, 'Farmers retrieved successfully');
+      
+    } finally {
+      connection.release();
+      console.log('Database connection released');
+    }
+  } catch (error) {
+    console.error('Get farmers error:', error);
+    return ResponseService.error(res, `Failed to retrieve farmers: ${error instanceof Error ? error.message : 'Unknown error'}`, 500);
+  }
+});
+
+/**
  * @route   GET /api/v1/users
  * @desc    Get all users (admin only)
  * @access  Private (Admin)

@@ -10,12 +10,11 @@ class MarketPriceModel {
     try {
       const [result] = await connection.execute(`
         INSERT INTO market_prices (
-          item_name, current_price, unit, price_date, source, notes
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          market_item_id, current_price, price_date, source, notes
+        ) VALUES (?, ?, ?, ?, ?)
       `, [
-        data.item_name,
+        data.market_item_id,
         data.current_price,
-        data.unit,
         data.price_date,
         data.source,
         data.notes || null
@@ -150,10 +149,17 @@ class MarketPriceModel {
       const total = (countResult as any[])[0].total;
       const totalPages = Math.ceil(total / limit);
 
-      // Get market prices with pagination
+      // Get market prices with pagination and join market items
       const [rows] = await connection.execute(`
-        SELECT * FROM market_prices 
-        ORDER BY price_date DESC, created_at DESC
+        SELECT 
+          mp.*,
+          mi.name as item_name,
+          mi.description as item_description,
+          mi.category as item_category,
+          mi.unit as item_unit
+        FROM market_prices mp
+        LEFT JOIN market_items mi ON mp.market_item_id = mi.id
+        ORDER BY mp.price_date DESC, mp.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `);
 
@@ -183,19 +189,78 @@ class MarketPriceModel {
 
       // Get total count
       const [countResult] = await connection.execute(`
-        SELECT COUNT(*) as total FROM market_prices WHERE item_name LIKE ?
+        SELECT COUNT(*) as total FROM market_prices mp
+        LEFT JOIN market_items mi ON mp.market_item_id = mi.id
+        WHERE mi.name LIKE ?
       `, [`%${itemName}%`]);
 
       const total = (countResult as any[])[0].total;
       const totalPages = Math.ceil(total / limit);
 
-      // Get market prices with pagination
+      // Get market prices with pagination and join market items
       const [rows] = await connection.execute(`
-        SELECT * FROM market_prices 
-        WHERE item_name LIKE ?
-        ORDER BY price_date DESC, created_at DESC
+        SELECT 
+          mp.*,
+          mi.name as item_name,
+          mi.description as item_description,
+          mi.category as item_category,
+          mi.unit as item_unit
+        FROM market_prices mp
+        LEFT JOIN market_items mi ON mp.market_item_id = mi.id
+        WHERE mi.name LIKE ?
+        ORDER BY mp.price_date DESC, mp.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `, [`%${itemName}%`]);
+
+      const marketPrices = (rows as any[]).map(row => this.mapRowToMarketPrice(row));
+
+      return {
+        data: marketPrices,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages
+        }
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * Search market prices by market item ID
+   */
+  static async searchByMarketItemId(marketItemId: number, page: number = 1, limit: number = 10): Promise<PaginatedResponse<MarketPriceType>> {
+    const connection = await pool.getConnection();
+    try {
+      const offset = (page - 1) * limit;
+
+      // Get total count
+      const [countRows] = await connection.execute(`
+        SELECT COUNT(*) as total
+        FROM market_prices mp
+        LEFT JOIN market_items mi ON mp.market_item_id = mi.id
+        WHERE mp.market_item_id = ?
+      `, [marketItemId]);
+
+      const total = (countRows as any[])[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      // Get paginated results
+      const [rows] = await connection.execute(`
+        SELECT 
+          mp.*,
+          mi.name as item_name,
+          mi.description as item_description,
+          mi.category as item_category,
+          mi.unit as item_unit
+        FROM market_prices mp
+        LEFT JOIN market_items mi ON mp.market_item_id = mi.id
+        WHERE mp.market_item_id = ? 
+        ORDER BY mp.price_date DESC, mp.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `, [marketItemId]);
 
       const marketPrices = (rows as any[]).map(row => this.mapRowToMarketPrice(row));
 
@@ -220,10 +285,17 @@ class MarketPriceModel {
     const connection = await pool.getConnection();
     try {
       const [rows] = await connection.execute(`
-        SELECT * FROM market_prices 
-        WHERE item_name = ? 
-        AND price_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-        ORDER BY price_date DESC
+        SELECT 
+          mp.*,
+          mi.name as item_name,
+          mi.description as item_description,
+          mi.category as item_category,
+          mi.unit as item_unit
+        FROM market_prices mp
+        LEFT JOIN market_items mi ON mp.market_item_id = mi.id
+        WHERE mi.name = ? 
+        AND mp.price_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+        ORDER BY mp.price_date DESC
       `, [itemName, days]);
 
       return (rows as any[]).map(row => this.mapRowToMarketPrice(row));
@@ -241,8 +313,8 @@ class MarketPriceModel {
       // Check if price for this item and date already exists
       const [existingRows] = await connection.execute(`
         SELECT id FROM market_prices 
-        WHERE item_name = ? AND DATE(price_date) = DATE(?)
-      `, [data.item_name, data.price_date]);
+        WHERE market_item_id = ? AND DATE(price_date) = DATE(?)
+      `, [data.market_item_id, data.price_date]);
 
       if ((existingRows as any[]).length > 0) {
         // Update existing price
@@ -268,14 +340,18 @@ class MarketPriceModel {
   private static mapRowToMarketPrice(row: any): MarketPriceType {
     return {
       id: row.id,
-      item_name: row.item_name,
+      market_item_id: row.market_item_id,
       current_price: row.current_price,
-      unit: row.unit,
       price_date: row.price_date,
       source: row.source,
       notes: row.notes,
       created_at: row.created_at,
-      updated_at: row.updated_at
+      updated_at: row.updated_at,
+      // Joined fields
+      item_name: row.item_name,
+      item_description: row.item_description,
+      item_category: row.item_category,
+      item_unit: row.item_unit
     };
   }
 }

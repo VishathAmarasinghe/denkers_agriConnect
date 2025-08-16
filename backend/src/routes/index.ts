@@ -3,6 +3,7 @@ import authRoutes from './auth';
 import userRoutes from './users';
 import equipmentRentalRoutes from './equipmentRental';
 import farmerWarehouseRoutes from './farmerWarehouse';
+import marketItemsRoutes from './marketItems';
 import fieldOfficerRoutes from './fieldOfficer';
 import warehouseRoutes from './warehouse';
 import soilCollectionCentersRoutes from './soilCollectionCenters';
@@ -29,6 +30,7 @@ router.use(`${API_VERSION}/equipment-rental`, equipmentRentalRoutes);
 
 // Farmer warehouse routes
 router.use(`${API_VERSION}/farmer-warehouse`, farmerWarehouseRoutes);
+router.use(`${API_VERSION}/market-items`, marketItemsRoutes);
 
 // Field officer routes
 router.use(`${API_VERSION}/field-officer`, fieldOfficerRoutes);
