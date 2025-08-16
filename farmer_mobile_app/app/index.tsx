@@ -45,7 +45,7 @@ const HomeScreen = () => {
     <Provider store={store}>
       {token ? (
         auth?.status === State.success ? (
-          <Redirect href="/dashboard/tabs" />
+          <Redirect href="/dashboard/tabs/home" />
         ) : (
           <Redirect href="/auth/landingScreen" />
         )
