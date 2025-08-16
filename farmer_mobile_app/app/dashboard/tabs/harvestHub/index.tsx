@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ImageBackground, ScrollView, Image, TouchableOpacity, TextInput, ImageSourcePropType, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, ScrollView, Image, TouchableOpacity, TextInput, ImageSourcePropType, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import CustomButton from '@/components/CustomButton';
 import { images } from '@/constants';
 import { Colors } from '@/constants/Colors';
+import { fetchWarehouses, fetchWarehouseById, fetchMarketPrices, createStorageRequest } from '@/utils/harvestHubApi';
+import { showErrorSnackbar, showSuccessSnackbar } from '@/utils/SnackbarUtils';
 
 // Screens
 enum Screen {
@@ -155,6 +157,9 @@ const HarvestHubScreen: React.FC = () => {
   const [screen, setScreen] = React.useState<Screen>(Screen.Landing);
   const [category, setCategory] = React.useState<Category>('Paddy');
   const [selectedWarehouse, setSelectedWarehouse] = React.useState<Warehouse | null>(null);
+  const [warehouses, setWarehouses] = React.useState<Warehouse[]>([]);
+  const [isWarehousesLoading, setIsWarehousesLoading] = React.useState(false);
+  const [warehousesError, setWarehousesError] = React.useState<string | null>(null);
   const [heroIndex, setHeroIndex] = React.useState<number>(0);
   const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
   const [currentMonth, setCurrentMonth] = React.useState<Date>(new Date());
@@ -163,11 +168,110 @@ const HarvestHubScreen: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({ name: '', location: '', contactNumber: '' });
   const [selectedTimeSlot, setSelectedTimeSlot] = React.useState<string | null>(null);
-  const filtered = React.useMemo(() => WAREHOUSES.filter(w => w.category === category), [category]);
+  const [marketPrices, setMarketPrices] = React.useState<Price[] | null>(null);
+  const [isPricesLoading, setIsPricesLoading] = React.useState(false);
+  const [pricesFailed, setPricesFailed] = React.useState(false);
+  // Validation state for details form
+  const [touched, setTouched] = React.useState<{ name: boolean; location: boolean; contactNumber: boolean }>({ name: false, location: false, contactNumber: false });
+  const [errors, setErrors] = React.useState<{ name?: string; location?: string; contactNumber?: string }>({});
+  const validateName = (v: string) => {
+    const value = v.trim();
+    if (!value) return 'Name is required';
+    if (value.length < 2) return 'Name must be at least 2 characters';
+    return '';
+  };
+  const validateLocation = (v: string) => {
+    const value = v.trim();
+    if (!value) return 'Location is required';
+    if (value.length < 3) return 'Location must be at least 3 characters';
+    return '';
+  };
+  const validatePhone = (v: string) => {
+    const digits = v.replace(/\D/g, '');
+    if (!digits) return 'Contact number is required';
+    if (digits.length !== 10) return 'Contact number must be exactly 10 digits';
+    return '';
+  };
+  const runValidation = (touchAll?: boolean) => {
+    const next = {
+      name: validateName(formData.name),
+      location: validateLocation(formData.location),
+      contactNumber: validatePhone(formData.contactNumber),
+    };
+    setErrors(next);
+    if (touchAll) setTouched({ name: true, location: true, contactNumber: true });
+    return !next.name && !next.location && !next.contactNumber;
+  };
+  const filtered = React.useMemo(() => {
+    const list = warehouses.length ? warehouses : WAREHOUSES;
+    return list.filter(w => w.category === category);
+  }, [category, warehouses]);
 
   // Reset hero image when selected warehouse changes
   React.useEffect(() => {
     setHeroIndex(0);
+  }, [selectedWarehouse?.id]);
+
+  // Fetch warehouses when entering the list screen (once)
+  const loadWarehouses = React.useCallback(async () => {
+    if (isWarehousesLoading) return;
+    setIsWarehousesLoading(true);
+    setWarehousesError(null);
+    try {
+      const res = await fetchWarehouses(1, 10);
+      const items: any[] = res?.data ?? res?.results ?? res?.items ?? res ?? [];
+      const mapped: Warehouse[] = items.map((it: any, idx: number) => ({
+        id: String(it.id ?? it.warehouse_id ?? idx + 1),
+        name: it.name ?? it.title ?? `Warehouse ${idx + 1}`,
+        location: it.location ?? it.address ?? 'Unknown',
+        availability: (it.status === 'open' || it.availability === 'Open') ? 'Open' : 'Open',
+        contact: it.contact ?? it.phone ?? 'N/A',
+        photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : [images.landingPageImage],
+        space: it.space ?? 'Available: -',
+        temperature: it.temperature ?? '-',
+        humidity: it.humidity ?? '-',
+        security: it.security ?? '-',
+        category: (it.category as Category) ?? 'Paddy',
+      }));
+      setWarehouses(mapped);
+    } catch (e: any) {
+      setWarehousesError(e?.message ?? 'Failed to load warehouses');
+      showErrorSnackbar('Failed to load warehouses');
+    } finally {
+      setIsWarehousesLoading(false);
+    }
+  }, [isWarehousesLoading]);
+
+  React.useEffect(() => {
+    if (screen === Screen.Warehouses && warehouses.length === 0) {
+      loadWarehouses();
+    }
+  }, [screen, warehouses.length, loadWarehouses]);
+
+  // Fetch details for a selected warehouse (optional enrichment)
+  React.useEffect(() => {
+    const enrich = async () => {
+      if (!selectedWarehouse?.id) return;
+      try {
+        const res = await fetchWarehouseById(selectedWarehouse.id);
+        const it = res?.data ?? res;
+        if (!it) return;
+        setSelectedWarehouse(prev => prev ? ({
+          ...prev,
+          name: it.name ?? prev.name,
+          location: it.location ?? prev.location,
+          contact: it.contact ?? prev.contact,
+          space: it.space ?? prev.space,
+          temperature: it.temperature ?? prev.temperature,
+          humidity: it.humidity ?? prev.humidity,
+          security: it.security ?? prev.security,
+          photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : prev.photos,
+        }) : prev);
+      } catch {
+        // non-fatal
+      }
+    };
+    enrich();
   }, [selectedWarehouse?.id]);
 
   // Calendar helpers (reuse logic from Machine Rent)
@@ -284,19 +388,43 @@ const HarvestHubScreen: React.FC = () => {
         ))}
       </View>
       <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
-        {filtered.map(item => (
-          <TouchableOpacity key={item.id} style={styles.card} onPress={() => { setSelectedWarehouse(item); setScreen(Screen.WarehouseDetail); }}>
-            <Image source={item.photos[0]} style={styles.thumb} />
-            <View style={styles.cardBody}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardMeta}>{item.location}</Text>
-              <View style={styles.inlineRow}>
-                <Text style={[styles.badge, item.availability === 'Open' ? styles.badgeOpen : styles.badgeClose]}>{item.availability}</Text>
-                <Text style={styles.cardMeta}>Contact: {item.contact}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {isWarehousesLoading && (
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color={GREEN} />
+            <Text style={styles.stateText}>Loading warehouses...</Text>
+          </View>
+        )}
+        {!isWarehousesLoading && warehousesError && (
+          <View style={styles.centerState}>
+            <Text style={styles.stateText}>Failed to load warehouses.</Text>
+            <View style={{ height: 8 }} />
+            <CustomButton title="Retry" variant="outline" size="small" onPress={loadWarehouses} />
+          </View>
+        )}
+        {!isWarehousesLoading && !warehousesError && filtered.length === 0 && (
+          <View style={styles.centerState}>
+            <Text style={styles.stateText}>No warehouses found for “{category}”.</Text>
+            <View style={{ height: 8 }} />
+            <CustomButton title="Refresh" variant="outline" size="small" onPress={loadWarehouses} />
+          </View>
+        )}
+        {!isWarehousesLoading && !warehousesError && filtered.length > 0 && (
+          <>
+            {filtered.map(item => (
+              <TouchableOpacity key={item.id} style={styles.card} onPress={() => { setSelectedWarehouse(item); setScreen(Screen.WarehouseDetail); }}>
+                <Image source={item.photos[0]} style={styles.thumb} />
+                <View style={styles.cardBody}>
+                  <Text style={styles.cardTitle}>{item.name}</Text>
+                  <Text style={styles.cardMeta}>{item.location}</Text>
+                  <View style={styles.inlineRow}>
+                    <Text style={[styles.badge, item.availability === 'Open' ? styles.badgeOpen : styles.badgeClose]}>{item.availability}</Text>
+                    <Text style={styles.cardMeta}>Contact: {item.contact}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -422,7 +550,42 @@ const HarvestHubScreen: React.FC = () => {
           </Text>
         </View>
 
-        {getMarketPricesForWarehouse(selectedWarehouse).map(mp => {
+        {/* Load prices from API on first render of this screen */}
+        {(() => {
+          if (!marketPrices && !isPricesLoading) {
+            setIsPricesLoading(true);
+            fetchMarketPrices()
+              .then((res: any) => {
+                const items: any[] = res?.data ?? res?.items ?? res ?? [];
+                const mapped: Price[] = items.map((it: any, idx: number) => ({
+                  id: String(it.id ?? idx + 1),
+                  product: it.product ?? it.item_name ?? it.commodity ?? `Item ${idx + 1}`,
+                  price: typeof it.price === 'number' ? `Rs. ${it.price.toFixed(2)} (per kg)` : (it.price ?? toPriceStr(0)),
+                  change: typeof it.change === 'number' ? it.change : 0,
+                }));
+                // If API returns empty, fallback to synthetic per-warehouse
+                setMarketPrices(mapped.length ? mapped : getMarketPricesForWarehouse(selectedWarehouse));
+              })
+              .catch(() => { setMarketPrices(getMarketPricesForWarehouse(selectedWarehouse)); setPricesFailed(true); })
+              .finally(() => setIsPricesLoading(false));
+          }
+          if (isPricesLoading && !marketPrices) {
+            return (
+              <View style={styles.centerState}>
+                <ActivityIndicator size="large" color={GREEN} />
+                <Text style={styles.stateText}>Loading market prices...</Text>
+              </View>
+            );
+          }
+          const data = marketPrices ?? [];
+          if (data.length === 0) {
+            return (
+              <View style={styles.centerState}>
+                <Text style={styles.stateText}>No market prices available.</Text>
+              </View>
+            );
+          }
+          return data.map(mp => {
           const up = mp.change > 0;
           const down = mp.change < 0;
           const deltaColor = up ? styles.deltaUp.color : down ? styles.deltaDown.color : Colors.text.secondary;
@@ -443,7 +606,14 @@ const HarvestHubScreen: React.FC = () => {
               </View>
             </View>
           );
-        })}
+          });
+        })()}
+        {/* If prices failed, show a soft notice */}
+        {pricesFailed && (
+          <View style={[styles.centerState, { paddingTop: 0 }]}>
+            <Text style={[styles.stateText, { color: Colors.text.secondary }]}>Live prices unavailable. Showing estimates.</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -571,38 +741,77 @@ const HarvestHubScreen: React.FC = () => {
               <Text style={styles.sheetLabel}>Name</Text>
               <TextInput
                 placeholder="Enter Your Name"
-                style={inputStyle}
+                style={[inputStyle, touched.name && errors.name ? styles.errorInput : null]}
                 value={formData.name}
-                onChangeText={(t)=>setFormData({ ...formData, name: t })}
+                onChangeText={(t)=>{ setFormData({ ...formData, name: t }); if (touched.name) setErrors(e=>({ ...e, name: validateName(t) })); }}
+                onBlur={()=>{ setTouched(prev=>({ ...prev, name: true })); setErrors(e=>({ ...e, name: validateName(formData.name) })); }}
               />
+              {touched.name && errors.name ? (<Text style={styles.errorText}>{errors.name}</Text>) : null}
             </View>
             <View style={styles.formFieldBlock}>
               <Text style={styles.sheetLabel}>Location</Text>
               <TextInput
                 placeholder="Enter Accurate Location of Your Land"
-                style={inputStyle}
+                style={[inputStyle, touched.location && errors.location ? styles.errorInput : null]}
                 value={formData.location}
-                onChangeText={(t)=>setFormData({ ...formData, location: t })}
+                onChangeText={(t)=>{ setFormData({ ...formData, location: t }); if (touched.location) setErrors(e=>({ ...e, location: validateLocation(t) })); }}
+                onBlur={()=>{ setTouched(prev=>({ ...prev, location: true })); setErrors(e=>({ ...e, location: validateLocation(formData.location) })); }}
               />
+              {touched.location && errors.location ? (<Text style={styles.errorText}>{errors.location}</Text>) : null}
             </View>
             <View style={styles.formFieldBlock}>
               <Text style={styles.sheetLabel}>Contact Number</Text>
               <TextInput
                 placeholder="Enter Your Phone Number"
-                style={inputStyle}
+                style={[inputStyle, touched.contactNumber && errors.contactNumber ? styles.errorInput : null]}
                 keyboardType="phone-pad"
                 value={formData.contactNumber}
-                onChangeText={(t)=>setFormData({ ...formData, contactNumber: t })}
+                onChangeText={(t)=>{ setFormData({ ...formData, contactNumber: t }); if (touched.contactNumber) setErrors(e=>({ ...e, contactNumber: validatePhone(t) })); }}
+                onBlur={()=>{ setTouched(prev=>({ ...prev, contactNumber: true })); setErrors(e=>({ ...e, contactNumber: validatePhone(formData.contactNumber) })); }}
               />
+              {touched.contactNumber && errors.contactNumber ? (<Text style={styles.errorText}>{errors.contactNumber}</Text>) : null}
             </View>
 
             <View>
               <CustomButton
                 title={isLoading ? 'Processing...' : 'Book Slot'}
-                onPress={() => {
-                  if (!formData.name.trim() || !formData.location.trim() || !formData.contactNumber.trim()) return;
+                onPress={async () => {
+                  const ok = runValidation(true);
+                  if (!ok) return;
+                  if (!selectedWarehouse?.id) {
+                    showErrorSnackbar('Select a warehouse first');
+                    return;
+                  }
+                  if (selectedDates.length !== 1) {
+                    showErrorSnackbar('Select a single date for booking');
+                    return;
+                  }
+                  if (!selectedTimeSlot) {
+                    showErrorSnackbar('Select a time slot before booking');
+                    return;
+                  }
+                  const digits = formData.contactNumber.replace(/\D/g, '');
                   setIsLoading(true);
-                  setTimeout(()=>{ setIsLoading(false); setShowDetailsForm(false); setShowConfirmation(true); }, 1200);
+                  try {
+                    // Current backend API doesn't accept date/time or contact fields.
+                    // We submit via storage request and pack the extra info into requirements.
+                    const payload = {
+                      warehouse_id: Number(selectedWarehouse.id),
+                      request_type: 'storage' as const,
+                      item_name: 'Harvest',
+                      quantity: 1,
+                      storage_duration_days: 1,
+                      storage_requirements: `Name: ${formData.name}; Phone: ${digits}; Location: ${formData.location}; Date: ${formatSingleSelectedDate()}; Slot: ${selectedTimeSlot ?? 'N/A'}`,
+                    };
+                    await createStorageRequest(payload);
+                    showSuccessSnackbar('Request submitted');
+                    setShowDetailsForm(false);
+                    setShowConfirmation(true);
+                  } catch (e: any) {
+                    showErrorSnackbar(e?.response?.data?.message ?? e?.message ?? 'Failed to submit request');
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
                 variant="primary"
                 size="large"
@@ -690,6 +899,8 @@ const SMHeader: React.FC<{ title: string; onBack?: () => void; right?: React.Rea
 const styles = StyleSheet.create({
   screenRoot: { flex: 1, backgroundColor: Colors.background.default },
   flex: { flex: 1, backgroundColor: Colors.background.default, paddingHorizontal: 16, paddingTop: 12 },
+  centerState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 24 },
+  stateText: { color: Colors.text.secondary, marginTop: 8, fontSize: 13 },
   // Landing
   landingRoot: { flex: 1 },
   bgImage: { flex: 1, justifyContent: 'flex-end' },
@@ -827,6 +1038,8 @@ const styles = StyleSheet.create({
   sheetTitle: { fontSize: 22, fontWeight: '700', color: Colors.text.primary, textAlign: 'center', marginBottom: 16 },
   sheetLabel: { fontSize: 14, fontWeight: '700', color: Colors.text.primary, marginBottom: 6 },
   formFieldBlock: { marginBottom: 8 },
+  errorInput: { borderColor: '#DC2626' },
+  errorText: { color: '#DC2626', fontSize: 12, marginTop: -6, marginBottom: 8 },
   summaryCard: { backgroundColor: Colors.background.default, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
 
   confirmOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff' },

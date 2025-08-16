@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
 
+
 // Production backend URL - Updated to use correct API version
 export const ServiceBaseUrl = 'http://206.189.89.116:3000/api/v1';
-
 export const APPLICATION_ADMIN = 'admin.agriConnect';
 export const APPLICATION_FARMER = 'farmer.agriConnect';
 
@@ -10,6 +10,7 @@ export const AppConfig = {
   serviceUrls: {
     authentication: `${ServiceBaseUrl}/auth`,
     otp: `${ServiceBaseUrl}/otp`,
+
   },
   apiEndpoints: {
     register: `${ServiceBaseUrl}/auth/register`,
@@ -24,5 +25,12 @@ export const AppConfig = {
     updateProfile: `${ServiceBaseUrl}/auth/update-profile`,
     uploadProfilePicture: `${ServiceBaseUrl}/auth/upload-profile-picture`,
     locations: `${ServiceBaseUrl}/auth/locations`,
+  // Harvest Hub endpoints
+  warehouses: `${ServiceBaseUrl}/warehouse`,
+  farmerWarehouseRequests: `${ServiceBaseUrl}/farmer-warehouse/requests`,
+  marketPrices: `${ServiceBaseUrl}/farmer-warehouse/market-prices`,
+  // Field Visit / Soil Testing Scheduling
+  fieldVisitors: `${ServiceBaseUrl}/soil-testing-scheduling/field-visitors`,
+  contactRequest: `${ServiceBaseUrl}/soil-testing-scheduling/contact-requests`,
   },
 };

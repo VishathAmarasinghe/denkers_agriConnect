@@ -16,14 +16,16 @@ const HomeScreen = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(state => state?.auth);
 
+
   APIService.initialize(ServiceBaseUrl);
+
 
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
       if (storedToken) {
-        checkAuthToken(dispatch);
+        await dispatch(checkAuthToken());
       }
       setLoading(false);
     };
@@ -45,7 +47,7 @@ const HomeScreen = () => {
     <Provider store={store}>
       {token ? (
         auth?.status === State.success ? (
-          <Redirect href="/dashboard/tabs" />
+          <Redirect href="/dashboard/tabs/home" />
         ) : (
           <Redirect href="/auth/landingScreen" />
         )

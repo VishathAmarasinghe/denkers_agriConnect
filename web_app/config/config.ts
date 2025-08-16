@@ -1,0 +1,108 @@
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "AgriConnect Admin";
+export const ServiceBaseUrl = process.env.NEXT_PUBLIC_SERVICE_BASE_URL || "http://localhost:3000";
+export const APPLICATION_ADMIN = process.env.NEXT_PUBLIC_APPLICATION_ADMIN || "";
+export const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY || "";
+export const FILE_DOWNLOAD_BASE_URL = `${
+  ServiceBaseUrl
+}${process.env.NEXT_PUBLIC_FILE_DOWNLOAD_PATH || "/uploads"}?filePath=`;
+
+export const AppConfig = {
+  serviceUrls: {
+    auth: {
+      login: '/api/v1/auth/login',
+      register: '/api/v1/auth/register',
+      forgotPassword: '/api/v1/auth/forgot-password',
+      resetPassword: '/api/v1/auth/reset-password',
+      changePassword: '/api/v1/auth/change-password',
+      profile: '/api/v1/auth/profile',
+      verifyToken: '/api/v1/auth/verify-token',
+    },
+    resources: {
+      selectors: '/api/v1/selectors',
+    },
+    soilCollection: {
+      centers: '/api/v1/soil-collection-centers',
+      search: '/api/v1/soil-collection-centers/search',
+      byLocation: '/api/v1/soil-collection-centers/location',
+    },
+    soilTesting: {
+      requests: '/api/v1/soil-testing-scheduling',
+      search: '/api/v1/soil-testing-scheduling/search',
+      pending: '/api/v1/soil-testing-scheduling/pending',
+      byFarmer: '/api/v1/soil-testing-scheduling/farmer',
+      reports: '/api/v1/soil-testing-reports',
+      reportsSearch: '/api/v1/soil-testing-reports/search',
+      publicReports: '/api/v1/soil-testing-reports/public',
+      createReport: '/api/v1/soil-testing-reports/upload',
+      updateReport: '/api/v1/soil-testing-reports',
+      deleteReport: '/api/v1/soil-testing-reports',
+    },
+    users: {
+      all: '/api/v1/users',
+      byId: '/api/v1/users',
+      search: '/api/v1/users/search',
+      farmers: '/api/v1/users?role=farmer',
+    },
+    fieldOfficers: {
+      all: '/api/v1/field-officers',
+      byId: '/api/v1/field-officers',
+      bySpecialization: '/api/v1/field-officers?specialization',
+      byLocation: '/api/v1/field-officers',
+    },
+    machineRental: {
+      categories: '/api/v1/equipment-rental/categories',
+      equipment: '/api/v1/equipment-rental/equipment',
+      availableEquipment: '/api/v1/equipment-rental/equipment/available',
+      equipmentByCategory: '/api/v1/equipment-rental/equipment/category',
+      equipmentAvailability: '/api/v1/equipment-rental/equipment/availability',
+      availableWithDates: '/api/v1/equipment-rental/equipment/available-with-dates',
+      rentalRequests: '/api/v1/equipment-rental/requests',
+      pendingRequests: '/api/v1/equipment-rental/requests/pending',
+      approveRequest: '/api/v1/equipment-rental/requests',
+      rejectRequest: '/api/v1/equipment-rental/requests',
+      confirmPickup: '/api/v1/equipment-rental/requests',
+      confirmReturn: '/api/v1/equipment-rental/requests',
+    },
+    warehouse: {
+      categories: '/api/v1/warehouse/categories',
+      warehouses: '/api/v1/warehouse',
+      warehouseById: '/api/v1/warehouse',
+      warehouseImages: '/api/v1/warehouse/images',
+      warehouseInventory: '/api/v1/warehouse/inventory',
+      warehouseAvailability: '/api/v1/warehouse/availability',
+      warehouseTimeSlots: '/api/v1/warehouse/time-slots',
+      warehouseBookings: '/api/v1/warehouse/bookings',
+      availableDates: '/api/v1/warehouse/available-dates',
+      availableTimeSlots: '/api/v1/warehouse/available-time-slots',
+      pendingBookings: '/api/v1/warehouse/bookings/pending',
+      approveBooking: '/api/v1/warehouse/bookings/approve',
+      rejectBooking: '/api/v1/warehouse/bookings/reject',
+      confirmPickup: '/api/v1/warehouse/bookings/confirm-pickup',
+      confirmReturn: '/api/v1/warehouse/bookings/confirm-return',
+      todayBookings: '/api/v1/warehouse/bookings/today',
+      overdueBookings: '/api/v1/warehouse/bookings/overdue',
+      bookingStatistics: '/api/v1/warehouse/bookings/statistics',
+      timeSlotStatistics: '/api/v1/warehouse/time-slots/statistics',
+      availabilitySummary: '/api/v1/warehouse/availability/summary',
+    },
+    farmerWarehouse: {
+      requests: '/api/v1/farmer-warehouse/requests',
+      requestById: '/api/v1/farmer-warehouse/requests',
+      qrCode: '/api/v1/farmer-warehouse/requests',
+      storage: '/api/v1/farmer-warehouse/storage',
+      storageSummary: '/api/v1/farmer-warehouse/storage/summary',
+      expiringStorage: '/api/v1/farmer-warehouse/storage/expiring',
+      expiredStorage: '/api/v1/farmer-warehouse/storage/expired',
+      notifications: '/api/v1/farmer-warehouse/notifications',
+      markNotificationRead: '/api/v1/farmer-warehouse/notifications',
+        marketPrices: '/api/v1/farmer-warehouse/market-prices',
+  marketPriceHistory: '/api/v1/farmer-warehouse/market-prices',
+  marketItems: '/api/v1/market-items',
+  marketItemById: '/api/v1/market-items',
+      adminPendingRequests: '/api/v1/farmer-warehouse/admin/requests/pending',
+      adminProcessExpired: '/api/v1/farmer-warehouse/admin/process-expired',
+      adminSendNotifications: '/api/v1/farmer-warehouse/admin/send-notifications',
+    },
+  },
+  webSocketUrl: `${ServiceBaseUrl}/ws`,
+};
