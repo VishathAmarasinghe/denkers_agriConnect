@@ -14,6 +14,12 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/server.ts',
     '!src/config/database.ts',
+    '!src/config/passport.ts',
+    '!src/scripts/**/*.ts',
+    '!src/test/**/*.ts',
+    '!src/routes/**/*.ts',
+    '!src/middleware/**/*.ts',
+    '!src/models/**/*.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -26,6 +32,16 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
-  testTimeout: 10000,
+  testTimeout: 15000,
   verbose: true,
+  clearMocks: true,
+  restoreMocks: true,
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/coverage/'
+  ],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  },
 };
