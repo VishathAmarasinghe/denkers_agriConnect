@@ -23,7 +23,7 @@ const HomeScreen = () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
       if (storedToken) {
-        dispatch(checkAuthToken());
+        await dispatch(checkAuthToken());
       }
       setLoading(false);
     };
@@ -43,9 +43,7 @@ const HomeScreen = () => {
 
   return (
     <Provider store={store}>
-      {__DEV__ ? (
-        <Redirect href="/dashboard/tabs/home" />
-      ) : token ? (
+  {token ? (
         auth?.status === State.success ? (
           <Redirect href="/dashboard/tabs/home" />
         ) : (
