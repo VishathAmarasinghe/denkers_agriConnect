@@ -114,8 +114,8 @@ export default function Layout() {
 					/>
 				)}
 
-				{/* HARVEST TAB */}
-				{roles.includes(APPLICATION_FARMER) && (
+				{/* HARVEST TAB (visible in dev always for easier testing) */}
+				{(roles.includes(APPLICATION_FARMER) || __DEV__) && (
 					<Tabs.Screen
 						name="harvestHub"
 						options={{

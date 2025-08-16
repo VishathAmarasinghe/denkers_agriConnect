@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ImageBackground, ScrollView, Image, TouchableOpacity, TextInput, ImageSourcePropType, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import CustomButton from '@/components/CustomButton';
 import { images } from '@/constants';
 import { Colors } from '@/constants/Colors';
@@ -160,6 +162,8 @@ const HarvestHubScreen: React.FC = () => {
   const [warehouses, setWarehouses] = React.useState<Warehouse[]>([]);
   const [isWarehousesLoading, setIsWarehousesLoading] = React.useState(false);
   const [warehousesError, setWarehousesError] = React.useState<string | null>(null);
+  const [warehouseRetryCount, setWarehouseRetryCount] = React.useState(0);
+  const didWarehousesLoadRef = React.useRef(false);
   const [heroIndex, setHeroIndex] = React.useState<number>(0);
   const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
   const [currentMonth, setCurrentMonth] = React.useState<Date>(new Date());
@@ -217,36 +221,65 @@ const HarvestHubScreen: React.FC = () => {
     if (isWarehousesLoading) return;
     setIsWarehousesLoading(true);
     setWarehousesError(null);
-    try {
-      const res = await fetchWarehouses(1, 10);
-      const items: any[] = res?.data ?? res?.results ?? res?.items ?? res ?? [];
-      const mapped: Warehouse[] = items.map((it: any, idx: number) => ({
-        id: String(it.id ?? it.warehouse_id ?? idx + 1),
-        name: it.name ?? it.title ?? `Warehouse ${idx + 1}`,
-        location: it.location ?? it.address ?? 'Unknown',
-        availability: (it.status === 'open' || it.availability === 'Open') ? 'Open' : 'Open',
-        contact: it.contact ?? it.phone ?? 'N/A',
-        photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : [images.landingPageImage],
-        space: it.space ?? 'Available: -',
-        temperature: it.temperature ?? '-',
-        humidity: it.humidity ?? '-',
-        security: it.security ?? '-',
-        category: (it.category as Category) ?? 'Paddy',
-      }));
-      setWarehouses(mapped);
-    } catch (e: any) {
-      setWarehousesError(e?.message ?? 'Failed to load warehouses');
-      showErrorSnackbar('Failed to load warehouses');
-    } finally {
-      setIsWarehousesLoading(false);
+    setWarehouseRetryCount(0);
+    const maxRetries = 3;
+    let attempt = 0;
+    let lastError: any = null;
+    // Small helper
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    while (attempt < maxRetries) {
+      try {
+        const res = await fetchWarehouses(1, 10);
+        // Support shapes: {success,message,data:{data:[],pagination}}, or direct arrays
+        const itemsRaw: any = res?.data?.data ?? res?.data ?? res?.results ?? res?.items ?? res ?? [];
+        const items: any[] = Array.isArray(itemsRaw) ? itemsRaw : Array.isArray(itemsRaw?.data) ? itemsRaw.data : [];
+        const toCat = (id: any): Category => (id === 2 ? 'Vegetables' : id === 3 ? 'Grains' : 'Paddy');
+        const mapped: Warehouse[] = items.map((it: any, idx: number) => ({
+          id: String(it.id ?? it.warehouse_id ?? idx + 1),
+          name: it.name ?? it.title ?? `Warehouse ${idx + 1}`,
+          location: it.address ?? it.location ?? 'Unknown',
+          availability: (it.warehouse_status === 'open' || it.is_available === true || it.availability === 'Open') ? 'Open' : 'Close',
+          contact: it.contact_person_number ?? it.contact ?? it.phone ?? 'N/A',
+          photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : [images.landingPageImage],
+          space: it.fixed_space_amount ? `Available: ${it.fixed_space_amount}` : (it.space ?? 'Available: -'),
+          temperature: it.temperature_range ?? it.temperature ?? '-',
+          humidity: it.humidity ?? '-',
+          security: it.security_level ?? it.security ?? '-',
+          category: (it.category as Category) ?? toCat(it.category_id),
+        }));
+        setWarehouses(mapped);
+        setWarehouseRetryCount(attempt);
+        lastError = null;
+        break;
+      } catch (e: any) {
+        lastError = e;
+        attempt += 1;
+        setWarehouseRetryCount(attempt);
+        if (attempt < maxRetries) {
+          await delay(500); // brief pause before retry
+        }
+      }
     }
+    if (lastError) {
+      setWarehousesError(lastError?.message ?? 'Failed to load warehouses');
+      showErrorSnackbar('Failed to load warehouses');
+    }
+    setIsWarehousesLoading(false);
   }, [isWarehousesLoading]);
 
   React.useEffect(() => {
-    if (screen === Screen.Warehouses && warehouses.length === 0) {
+    if (screen === Screen.Warehouses && !didWarehousesLoadRef.current) {
+      didWarehousesLoadRef.current = true;
       loadWarehouses();
     }
-  }, [screen, warehouses.length, loadWarehouses]);
+  }, [screen]);
+
+  // Reset the guard when leaving Warehouses so it can reload on next entry
+  React.useEffect(() => {
+    if (screen !== Screen.Warehouses) {
+      didWarehousesLoadRef.current = false;
+    }
+  }, [screen]);
 
   // Fetch details for a selected warehouse (optional enrichment)
   React.useEffect(() => {
@@ -254,17 +287,17 @@ const HarvestHubScreen: React.FC = () => {
       if (!selectedWarehouse?.id) return;
       try {
         const res = await fetchWarehouseById(selectedWarehouse.id);
-        const it = res?.data ?? res;
+        const it = res?.data?.data ?? res?.data ?? res;
         if (!it) return;
         setSelectedWarehouse(prev => prev ? ({
           ...prev,
           name: it.name ?? prev.name,
-          location: it.location ?? prev.location,
-          contact: it.contact ?? prev.contact,
-          space: it.space ?? prev.space,
-          temperature: it.temperature ?? prev.temperature,
+          location: it.address ?? it.location ?? prev.location,
+          contact: it.contact_person_number ?? it.contact ?? prev.contact,
+          space: it.fixed_space_amount ? `Available: ${it.fixed_space_amount}` : (it.space ?? prev.space),
+          temperature: it.temperature_range ?? it.temperature ?? prev.temperature,
           humidity: it.humidity ?? prev.humidity,
-          security: it.security ?? prev.security,
+          security: it.security_level ?? it.security ?? prev.security,
           photos: Array.isArray(it.images) && it.images.length ? it.images.map((u: string) => ({ uri: u })) : prev.photos,
         }) : prev);
       } catch {
@@ -388,17 +421,17 @@ const HarvestHubScreen: React.FC = () => {
         ))}
       </View>
       <ScrollView contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
-        {isWarehousesLoading && (
+    {isWarehousesLoading && (
           <View style={styles.centerState}>
             <ActivityIndicator size="large" color={GREEN} />
-            <Text style={styles.stateText}>Loading warehouses...</Text>
+      <Text style={styles.stateText}>Loading warehouses... {warehouseRetryCount > 0 ? `(retry ${warehouseRetryCount}/3)` : ''}</Text>
           </View>
         )}
         {!isWarehousesLoading && warehousesError && (
           <View style={styles.centerState}>
             <Text style={styles.stateText}>Failed to load warehouses.</Text>
             <View style={{ height: 8 }} />
-            <CustomButton title="Retry" variant="outline" size="small" onPress={loadWarehouses} />
+            <CustomButton title="Retry" variant="outline" size="small" onPress={() => { setWarehouseRetryCount(0); loadWarehouses(); }} />
           </View>
         )}
         {!isWarehousesLoading && !warehousesError && filtered.length === 0 && (
@@ -788,6 +821,14 @@ const HarvestHubScreen: React.FC = () => {
                   }
                   if (!selectedTimeSlot) {
                     showErrorSnackbar('Select a time slot before booking');
+                    return;
+                  }
+                  // Require auth token to submit booking
+                  const token = await AsyncStorage.getItem('token');
+                  if (!token) {
+                    showErrorSnackbar('Please sign in to book a slot');
+                    // Navigate to sign-in flow
+                    try { router.push('/auth/landingScreen'); } catch {}
                     return;
                   }
                   const digits = formData.contactNumber.replace(/\D/g, '');
