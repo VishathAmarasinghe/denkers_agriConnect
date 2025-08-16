@@ -1,7 +1,7 @@
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { pool } from '../config/database';
-import { User } from '../models/User';
+import { User } from '../types';
 
 export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
@@ -44,7 +44,7 @@ export class GoogleAuthService {
       const googleUser = await this.verifyIdToken(idToken);
 
       // Check if user exists in database
-      let user = await this.findUserByGoogleId(googleUser.sub);
+      let user = await this.findUserByGoogleOAuthId(googleUser.sub);
 
       if (!user) {
         // Create new user if doesn't exist
@@ -65,19 +65,19 @@ export class GoogleAuthService {
   }
 
   /**
-   * Find user by Google ID
+   * Find user by Google OAuth ID
    */
-  private async findUserByGoogleId(googleId: string): Promise<User | null> {
+  private async findUserByGoogleOAuthId(googleOAuthId: string): Promise<User | null> {
     try {
       const [rows] = await pool.execute(
-        'SELECT * FROM users WHERE google_id = ?',
-        [googleId]
+        'SELECT * FROM users WHERE google_oauth_id = ?',
+        [googleOAuthId]
       );
 
       const users = rows as any[];
       return users.length > 0 ? users[0] : null;
     } catch (error) {
-      console.error('Error finding user by Google ID:', error);
+      console.error('Error finding user by Google OAuth ID:', error);
       return null;
     }
   }
@@ -89,11 +89,11 @@ export class GoogleAuthService {
     try {
       const [result] = await pool.execute(
         `INSERT INTO users (
-          google_id, 
+          google_oauth_id, 
           email, 
           first_name, 
           last_name, 
-          profile_picture, 
+          profile_image_url, 
           email_verified,
           created_at,
           updated_at
@@ -161,7 +161,7 @@ export class GoogleAuthService {
     const payload = {
       userId: user.id,
       email: user.email,
-      googleId: user.google_id,
+      googleOAuthId: user.google_oauth_id,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
     };
