@@ -1,15 +1,12 @@
-import { Platform } from 'react-native';
-
-// Production backend URL - Updated to use correct API version
+// Central API base (already includes /api/v1)
 export const ServiceBaseUrl = 'http://206.189.89.116:3000/api/v1';
-
 export const APPLICATION_ADMIN = 'admin.agriConnect';
 export const APPLICATION_FARMER = 'farmer.agriConnect';
 
 export const AppConfig = {
   serviceUrls: {
-    authentication: `${ServiceBaseUrl}/auth`,
-    otp: `${ServiceBaseUrl}/otp`,
+  authentication: `${ServiceBaseUrl}/auth`,
+  otp: `${ServiceBaseUrl}/otp`,
   },
   apiEndpoints: {
     register: `${ServiceBaseUrl}/auth/register`,
