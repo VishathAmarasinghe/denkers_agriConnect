@@ -26,19 +26,6 @@ export default function Layout() {
 					options={{
 						title: 'Home',
 						headerShown: false,
-						tabBarIcon: ({ focused, color }) => (
-							<View style={{
-								backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
-								borderRadius: 12,
-								padding: 8,
-								width: 40,
-								height: 40,
-								alignItems: 'center',
-								justifyContent: 'center',
-							}}>
-								<Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
-							</View>
-						),
 					}}
 				/>
 
@@ -49,19 +36,6 @@ export default function Layout() {
 						options={{
 							title: 'Soil Test',
 							headerShown: false,
-							tabBarIcon: ({ focused, color }) => (
-								<View style={{
-									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
-									borderRadius: 12,
-									padding: 8,
-									width: 40,
-									height: 40,
-									alignItems: 'center',
-									justifyContent: 'center',
-								}}>
-									<Ionicons name={focused ? 'flask' : 'flask-outline'} size={22} color={color} />
-								</View>
-							),
 						}}
 					/>
 				)}
@@ -73,19 +47,6 @@ export default function Layout() {
 						options={{
 							title: 'Officers',
 							headerShown: false,
-							tabBarIcon: ({ focused, color }) => (
-								<View style={{
-									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
-									borderRadius: 12,
-									padding: 8,
-									width: 40,
-									height: 40,
-									alignItems: 'center',
-									justifyContent: 'center',
-								}}>
-									<Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} />
-								</View>
-							),
 						}}
 					/>
 				)}
@@ -97,19 +58,6 @@ export default function Layout() {
 						options={{
 							title: 'Machines',
 							headerShown: false,
-							tabBarIcon: ({ focused, color }) => (
-								<View style={{
-									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
-									borderRadius: 12,
-									padding: 8,
-									width: 40,
-									height: 40,
-									alignItems: 'center',
-									justifyContent: 'center',
-								}}>
-									<Ionicons name={focused ? 'car' : 'car-outline'} size={22} color={color} />
-								</View>
-							),
 						}}
 					/>
 				)}
@@ -121,19 +69,6 @@ export default function Layout() {
 						options={{
 							title: 'Harvest',
 							headerShown: false,
-							tabBarIcon: ({ focused, color }) => (
-								<View style={{
-									backgroundColor: focused ? 'rgba(255,255,255,0.2)' : 'transparent',
-									borderRadius: 12,
-									padding: 8,
-									width: 40,
-									height: 40,
-									alignItems: 'center',
-									justifyContent: 'center',
-								}}>
-									<Ionicons name={focused ? 'business' : 'business-outline'} size={22} color={color} />
-								</View>
-							),
 						}}
 					/>
 				)}

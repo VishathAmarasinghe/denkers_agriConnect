@@ -14,6 +14,14 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
+node_modules/
+farmer_mobile_app/node_modules/
+farmer_mobile_app/npm-debug.log*
+farmer_mobile_app/yarn-debug.log*
+farmer_mobile_app/yarn-error.log*
+package-lock.json
+farmer_mobile_app/package-lock.json
+=======
 # ===========================================
 # Node.js Dependencies & Build Outputs
 # ===========================================
@@ -46,6 +54,7 @@ web_app/.env*
 web_app/*.tsbuildinfo
 web_app/.vercel
 web_app/.turbo
+
 
 # ===========================================
 # Backend (Node.js/Express)
