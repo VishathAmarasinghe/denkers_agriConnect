@@ -1,4 +1,4 @@
-import { AppConfig } from '@/config/config';
+import { AppConfig, ServiceBaseUrl } from '@/config/config';
 import { checkAuthToken } from '@/slice/authSlice/Auth';
 import { store, useAppDispatch, useAppSelector } from '@/slice/store';
 import { State } from '@/types/types';
@@ -16,14 +16,16 @@ const HomeScreen = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(state => state?.auth);
 
-  APIService.initialize(AppConfig.serviceUrls.authenticaion);
+
+  APIService.initialize(AppConfig.serviceUrls.authentication);
+
 
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
       if (storedToken) {
-        checkAuthToken(dispatch);
+        await dispatch(checkAuthToken());
       }
       setLoading(false);
     };
@@ -43,9 +45,9 @@ const HomeScreen = () => {
 
   return (
     <Provider store={store}>
-      {token ? (
+  {token ? (
         auth?.status === State.success ? (
-          <Redirect href="/dashboard/tabs" />
+          <Redirect href="/dashboard/tabs/home" />
         ) : (
           <Redirect href="/auth/landingScreen" />
         )

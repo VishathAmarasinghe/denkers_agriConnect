@@ -1,7 +1,7 @@
 import CustomButton from '@/components/CustomButton';
 import { images } from '@/constants';
 import { router } from 'expo-router';
-import { Dimensions, ImageBackground, Text, View } from 'react-native';
+import { Dimensions, ImageBackground, Text, View, StyleSheet } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,8 +12,6 @@ const LandingScreen = () => {
 
   return (
     <ImageBackground source={images.landingPageImage} style={{ width, height }} className="flex-1" resizeMode="cover">
-      {/* Overlay for better text readability */}
-      <View className="flex-1 bg-black/20" />
 
       {/* Content */}
       <View className="flex-1 justify-end px-6 pb-20">
@@ -34,6 +32,9 @@ const LandingScreen = () => {
           />
         </View>
       </View>
+    {/* Non-blocking overlay for better text readability */}
+    <View pointerEvents="none" style={StyleSheet.absoluteFillObject} className="bg-black/30" />
+
     </ImageBackground>
   );
 };
