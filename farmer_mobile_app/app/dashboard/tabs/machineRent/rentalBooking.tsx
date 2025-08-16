@@ -204,7 +204,7 @@ export default function RentalBookingScreen() {
       
       // Fallback to API call if no machine data or parsing failed
       const equipment = await fetchEquipmentById(parseInt(machineId));
-      if (equipment) {
+      if (equipment != null) {
         setMachine(equipment);
       } else {
         setMachineError('Machine not found');

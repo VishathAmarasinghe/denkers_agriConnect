@@ -64,7 +64,7 @@ export default function MachineDetailsScreen() {
       
       // Fallback to API call if no machine data or parsing failed
       const equipment = await fetchEquipmentById(parseInt(machineId));
-      if (equipment) {
+      if (equipment != null) {
         setMachine(equipment);
       } else {
         setError('Equipment not found');

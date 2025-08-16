@@ -277,7 +277,7 @@ export const useMachineRental = (): UseMachineRentalReturn => {
   // Clear errors
   const clearErrors = useCallback(() => {
     setCategoriesError(null);
-    setEquipmentError(null);
+
     setAvailabilityError(null);
     setRentalRequestsError(null);
   }, []);
@@ -328,10 +328,16 @@ export const useMachineRental = (): UseMachineRentalReturn => {
     fetchMyRentalRequests,
     createRentalRequest,
     cancelRentalRequest,
-    
+
     // Pagination
-    pagination,
-    
+    // Ensure the pagination object uses the correct property name: total_pages
+    pagination: pagination
+      ? {
+          ...pagination,
+          total_pages: pagination.totalPages ?? pagination.totalPages ?? 0,
+        }
+      : null,
+
     // Utility functions
     clearErrors,
     resetState,
