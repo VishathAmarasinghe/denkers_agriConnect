@@ -18,8 +18,7 @@ export default function RequestDetailsScreen() {
   const {
     rentalRequests,
     rentalRequestsLoading,
-    fetchMyRentalRequests,
-    cancelRentalRequest
+    fetchMyRentalRequests
   } = useMachineRental();
 
   const handleBack = () => {
@@ -28,35 +27,7 @@ export default function RequestDetailsScreen() {
 
 
 
-  const handleCancelRequest = async () => {
-    if (!request || request.status !== 'pending') {
-      Alert.alert('Cannot Cancel', 'Only pending requests can be cancelled.');
-      return;
-    }
 
-    Alert.alert(
-      'Cancel Rental Request',
-      `Are you sure you want to cancel your rental request for ${request.equipment_name}?`,
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelRentalRequest(request.id);
-              Alert.alert('Success', 'Rental request cancelled successfully.');
-              // Refresh the request details
-              loadRequestDetails();
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Failed to cancel request';
-              Alert.alert('Error', errorMessage);
-            }
-          }
-        }
-      ]
-    );
-  };
 
   const handleContactSupport = () => {
     Alert.alert(
@@ -595,15 +566,7 @@ export default function RequestDetailsScreen() {
         {/* Action Buttons */}
         <View className="px-6 pb-8">
           <View className="space-y-3">
-            {request.status === 'pending' && (
-              <CustomButton
-                title="Cancel Request"
-                onPress={handleCancelRequest}
-                variant="secondary"
-                size="large"
-                fullWidth={true}
-              />
-            )}
+
             
             <CustomButton
               title="Contact Support"

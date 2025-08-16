@@ -14,7 +14,6 @@ export default function RentalRequestsScreen() {
     rentalRequestsLoading,
     rentalRequestsError,
     fetchMyRentalRequests,
-    cancelRentalRequest,
     clearErrors
   } = useMachineRental();
 
@@ -33,33 +32,7 @@ export default function RentalRequestsScreen() {
     fetchMyRentalRequests();
   };
 
-  const handleCancelRequest = async (request: EquipmentRentalRequest) => {
-    if (request.status !== 'pending') {
-      Alert.alert('Cannot Cancel', 'Only pending requests can be cancelled.');
-      return;
-    }
 
-    Alert.alert(
-      'Cancel Rental Request',
-      `Are you sure you want to cancel your rental request for ${request.equipment_name}?`,
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelRentalRequest(request.id);
-              Alert.alert('Success', 'Rental request cancelled successfully.');
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Failed to cancel request';
-              Alert.alert('Error', errorMessage);
-            }
-          }
-        }
-      ]
-    );
-  };
 
   const handleViewDetails = (request: EquipmentRentalRequest) => {
     // Navigate to request details screen
@@ -233,15 +206,7 @@ export default function RentalRequestsScreen() {
           fullWidth={false}
         />
         
-        {request.status === 'pending' && (
-          <CustomButton
-            title="Cancel"
-            onPress={() => handleCancelRequest(request)}
-            variant="secondary"
-            size="small"
-            fullWidth={false}
-          />
-        )}
+
       </View>
 
       {/* Additional Info for Different Statuses */}

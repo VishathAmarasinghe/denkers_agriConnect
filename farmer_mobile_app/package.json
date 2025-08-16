@@ -37,6 +37,7 @@
     "@config-plugins/react-native-blob-util": "^9.0.0",
     "@config-plugins/react-native-pdf": "^9.0.0",
     "@expo/vector-icons": "^14.0.4",
+    "@google/generative-ai": "^0.24.1",
     "@kolking/react-native-avatar": "^2.1.4",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "^8.3.0",
